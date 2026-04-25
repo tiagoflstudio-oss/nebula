@@ -12,6 +12,7 @@ import AdminPage from './pages/AdminPage';
 
 function App() {
   const [session, setSession] = useState(null);
+  const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [config, setConfig] = useState({
     ip: 'localhost',
@@ -33,6 +34,26 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (session) {
+      fetchChats();
+    }
+  }, [session]);
+
+  const fetchChats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chats')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setChats(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar conversas:', error.message);
+    }
+  };
+
   const handleNewChat = async () => {
     try {
       const { data, error } = await supabase
@@ -41,7 +62,10 @@ function App() {
         .select();
 
       if (error) throw error;
-      if (data) setSelectedChatId(data[0].id);
+      if (data) {
+        setSelectedChatId(data[0].id);
+        fetchChats(); // Atualiza a lista lateral imediatamente
+      }
     } catch (error) {
       console.error('Erro ao criar novo chat:', error.message);
     }
@@ -55,6 +79,7 @@ function App() {
         {session && (
           <Sidebar 
             session={session}
+            chats={chats}
             selectedChatId={selectedChatId}
             onSelectChat={setSelectedChatId}
             onNewChat={handleNewChat}

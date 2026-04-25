@@ -1,33 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const Sidebar = ({ onSelectChat, selectedChatId, onNewChat, session }) => {
-  const [chats, setChats] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (session) {
-      fetchChats();
-    }
-  }, [session]);
-
-  const fetchChats = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('chats')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setChats(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar conversas:', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const Sidebar = ({ onSelectChat, selectedChatId, onNewChat, session, chats }) => {
   return (
     <aside className="sidebar glass">
       <button className="btn-new-chat" onClick={onNewChat}>
@@ -39,9 +13,7 @@ const Sidebar = ({ onSelectChat, selectedChatId, onNewChat, session }) => {
 
       <div className="sidebar-history">
         <p className="sidebar-label">Histórico</p>
-        {loading ? (
-          <div className="sidebar-loading">Carregando...</div>
-        ) : chats.length === 0 ? (
+        {!chats || chats.length === 0 ? (
           <div className="sidebar-empty">Nenhuma conversa ainda.</div>
         ) : (
           chats.map((chat) => (

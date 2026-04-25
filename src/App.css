@@ -190,8 +190,8 @@ body {
 }
 
 .sidebar-item {
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -201,28 +201,29 @@ body {
   color: var(--text-secondary);
   font-size: 0.85rem;
   position: relative;
-  border: 1px solid transparent;
+  background: transparent;
+  border: none;
 }
 
 .sidebar-item-main {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex: 1;
-  min-width: 0; /* Necessário para o truncamento de texto */
+  min-width: 0;
 }
 
 .sidebar-item-main span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding-right: 10px;
 }
 
 .sidebar-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s ease-in-out;
 }
 
 .sidebar-item:hover .sidebar-actions {
@@ -233,47 +234,47 @@ body {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  padding: 4px;
-  border-radius: 6px;
+  padding: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s;
 }
 
 .sidebar-actions button:hover {
-  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
 }
 
 .sidebar-actions button.active {
-  color: #fbbf24; /* Cor de ouro para fixados */
+  color: #fbbf24;
 }
 
 .sidebar-actions button.btn-delete:hover {
   color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
 }
 
 .sidebar-actions svg {
-  width: 14px !important;
-  height: 14px !important;
+  width: 13px !important;
+  height: 13px !important;
 }
 
 .sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
 }
 
 .sidebar-item.active {
-  background: rgba(99, 102, 241, 0.1);
   color: var(--accent-primary);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  font-weight: 500;
 }
 
-.sidebar-item.pinned {
-  border-left: 3px solid #fbbf24;
+.sidebar-item.pinned::before {
+  content: '•';
+  color: #fbbf24;
+  margin-right: 6px;
+  font-size: 1.2rem;
+  line-height: 0;
 }
 
 .sidebar-empty, .sidebar-loading {

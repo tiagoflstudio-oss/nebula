@@ -8,7 +8,7 @@ import AdminPanel from './components/AdminPanel.jsx';
 import Navbar from './components/Navbar.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import Auth from './components/Auth.jsx';
-import AdminPage from './components/Admin.jsx';
+import AdminPage from './pages/AdminPage.jsx';
 
 function App() {
   const [session, setSession] = useState(null);

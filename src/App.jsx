@@ -45,6 +45,7 @@ function App() {
       const { data, error } = await supabase
         .from('chats')
         .select('*')
+        .order('is_pinned', { ascending: false }) // Fixados primeiro
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -64,10 +65,42 @@ function App() {
       if (error) throw error;
       if (data) {
         setSelectedChatId(data[0].id);
-        fetchChats(); // Atualiza a lista lateral imediatamente
+        fetchChats();
       }
     } catch (error) {
       console.error('Erro ao criar novo chat:', error.message);
+    }
+  };
+
+  const handleDeleteChat = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta conversa?')) return;
+    try {
+      const { error } = await supabase.from('chats').delete().eq('id', id);
+      if (error) throw error;
+      if (selectedChatId === id) setSelectedChatId(null);
+      fetchChats();
+    } catch (error) {
+      console.error('Erro ao deletar chat:', error.message);
+    }
+  };
+
+  const handleRenameChat = async (id, newTitle) => {
+    try {
+      const { error } = await supabase.from('chats').update({ title: newTitle }).eq('id', id);
+      if (error) throw error;
+      fetchChats();
+    } catch (error) {
+      console.error('Erro ao renomear chat:', error.message);
+    }
+  };
+
+  const handlePinChat = async (id, isPinned) => {
+    try {
+      const { error } = await supabase.from('chats').update({ is_pinned: !isPinned }).eq('id', id);
+      if (error) throw error;
+      fetchChats();
+    } catch (error) {
+      console.error('Erro ao fixar chat:', error.message);
     }
   };
 
@@ -83,6 +116,9 @@ function App() {
             selectedChatId={selectedChatId}
             onSelectChat={setSelectedChatId}
             onNewChat={handleNewChat}
+            onDeleteChat={handleDeleteChat}
+            onRenameChat={handleRenameChat}
+            onPinChat={handlePinChat}
           />
         )}
 

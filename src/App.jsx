@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { supabase } from './lib/supabaseClient';
+import { supabase } from './lib/supabaseClient.js';
 import './App.css';
-import Background from './components/Background';
-import Chat from './components/Chat';
-import AdminPanel from './components/AdminPanel';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
-import Auth from './components/Auth';
-import AdminPage from './pages/AdminPage';
+import Background from './components/Background.jsx';
+import Chat from './components/Chat.jsx';
+import AdminPanel from './components/AdminPanel.jsx';
+import Navbar from './components/Navbar.jsx';
+import Sidebar from './components/Sidebar.jsx';
+import Auth from './components/Auth.jsx';
+import AdminPage from './components/Admin.jsx';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -24,13 +24,9 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -45,13 +41,12 @@ function App() {
       const { data, error } = await supabase
         .from('chats')
         .select('*')
-        .order('is_pinned', { ascending: false }) // Fixados primeiro
+        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setChats(data || []);
     } catch (error) {
-      console.error('Erro ao buscar conversas:', error.message);
+      console.error('Erro:', error.message);
     }
   };
 
@@ -61,54 +56,29 @@ function App() {
         .from('chats')
         .insert([{ user_id: session.user.id, title: 'Nova Conversa' }])
         .select();
-
       if (error) throw error;
       if (data) {
         setSelectedChatId(data[0].id);
         fetchChats();
       }
     } catch (error) {
-      console.error('Erro ao criar novo chat:', error.message);
+      console.error('Erro:', error.message);
     }
   };
 
   const handleDeleteChat = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta conversa?')) return;
+    if (!window.confirm('Excluir?')) return;
     try {
-      const { error } = await supabase.from('chats').delete().eq('id', id);
-      if (error) throw error;
+      await supabase.from('chats').delete().eq('id', id);
       if (selectedChatId === id) setSelectedChatId(null);
       fetchChats();
-    } catch (error) {
-      console.error('Erro ao deletar chat:', error.message);
-    }
-  };
-
-  const handleRenameChat = async (id, newTitle) => {
-    try {
-      const { error } = await supabase.from('chats').update({ title: newTitle }).eq('id', id);
-      if (error) throw error;
-      fetchChats();
-    } catch (error) {
-      console.error('Erro ao renomear chat:', error.message);
-    }
-  };
-
-  const handlePinChat = async (id, isPinned) => {
-    try {
-      const { error } = await supabase.from('chats').update({ is_pinned: !isPinned }).eq('id', id);
-      if (error) throw error;
-      fetchChats();
-    } catch (error) {
-      console.error('Erro ao fixar chat:', error.message);
-    }
+    } catch (error) {}
   };
 
   return (
     <Router>
       <div className="app-container">
         <Background />
-        
         {session && (
           <Sidebar 
             session={session}
@@ -117,14 +87,12 @@ function App() {
             onSelectChat={setSelectedChatId}
             onNewChat={handleNewChat}
             onDeleteChat={handleDeleteChat}
-            onRenameChat={handleRenameChat}
-            onPinChat={handlePinChat}
+            onRenameChat={()=>{}}
+            onPinChat={()=>{}}
           />
         )}
-
         <div className="main-wrapper">
           <Navbar session={session} />
-          
           <div className="main-content">
             {!session ? (
               <Auth />
@@ -134,13 +102,9 @@ function App() {
                   <>
                     <header className="fade-in">
                       <h1>Nebula <span>AI</span></h1>
-                      <p>Inteligência Artificial Minimalista</p>
+                      <p>Minimalista</p>
                     </header>
-                    <Chat 
-                      ollamaConfig={config} 
-                      chatId={selectedChatId} 
-                      session={session}
-                    />
+                    <Chat ollamaConfig={config} chatId={selectedChatId} session={session} />
                     <AdminPanel config={config} setConfig={setConfig} />
                   </>
                 } />
@@ -148,11 +112,7 @@ function App() {
                   session.user.email === 'tiagoflstudio@gmail.com' ? (
                     <AdminPage config={config} />
                   ) : (
-                    <div className="glass glass-card fade-in" style={{ padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
-                      <h2>Acesso Negado</h2>
-                      <p style={{ margin: '15px 0', color: 'var(--text-secondary)' }}>Você não tem permissão para acessar esta área.</p>
-                      <button className="btn-auth" onClick={() => window.location.href = '/'}>Voltar ao Chat</button>
-                    </div>
+                    <div>Acesso Negado</div>
                   )
                 } />
               </Routes>

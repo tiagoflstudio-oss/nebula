@@ -22,7 +22,6 @@ const AdminPage = ({ config }) => {
         setLoading(false);
       }
     };
-
     fetchModels();
   }, [config]);
 
@@ -43,19 +42,15 @@ const AdminPage = ({ config }) => {
             <span>99.9%</span>
           </div>
           <div className="stat-row">
-            <span>Modelos Instalados</span>
+            <span>Modelos</span>
             <span>{models.length}</span>
-          </div>
-          <div className="stat-row">
-            <span>Localização</span>
-            <span>{config.ip}:{config.port}</span>
           </div>
         </div>
 
         <div className="admin-card glass wide">
           <h3>Modelos Disponíveis</h3>
           {loading ? (
-            <p>Carregando modelos...</p>
+            <p>Carregando...</p>
           ) : (
             <div className="model-list">
               {models.length > 0 ? models.map((m, i) => (
@@ -64,22 +59,12 @@ const AdminPage = ({ config }) => {
                     <strong>{m.name}</strong>
                     <span>{Math.round(m.size / (1024 * 1024 * 1024) * 100) / 100} GB</span>
                   </div>
-                  <button className="btn-action">Gerenciar</button>
                 </div>
               )) : (
-                <p className="error-text">Nenhum modelo encontrado. Verifique a conexão com o Ollama.</p>
+                <p>Nenhum modelo encontrado.</p>
               )}
             </div>
           )}
-        </div>
-
-        <div className="admin-card glass">
-          <h3>Controle do Servidor</h3>
-          <div className="control-group">
-            <button className="btn-control glass">Reiniciar Ollama</button>
-            <button className="btn-control glass">Limpar Cache</button>
-            <button className="btn-control danger glass">Parar Instância</button>
-          </div>
         </div>
       </div>
     </div>

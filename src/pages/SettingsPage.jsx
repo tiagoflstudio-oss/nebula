@@ -60,7 +60,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
     setModalConfig({
       isOpen: true,
       title: 'Excluir Conexão',
-      message: 'Tem certeza que deseja apagar esta conexão de API? Esta ação removerá o acesso do Rastreador de Cota permanentemente.',
+      message: 'Tem certeza que deseja apagar esta conexão de conta? Esta ação removerá o acesso do Rastreador de Cota permanentemente.',
       type: 'confirm',
       onConfirm: async () => {
         try {
@@ -106,9 +106,9 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
       { id: 'ia-engine', label: 'IA Engine', icon: '🧠' },
       { id: 'master-os', label: 'Master OS', icon: '🖥️' }
     ] : []),
-    { id: 'integracoes', label: 'Integrações', icon: '🔌' },
+    { id: 'integracoes', label: 'Integrações de API', icon: '🔌' },
     ...(userRole === 'admin' || userRole === 'vip' ? [{ id: 'ia-global', label: 'IA Global (Mestre)', icon: '🌐' }] : []),
-    { id: 'conexoes', label: 'Conexões de API', icon: '🔗' },
+    { id: 'conexoes', label: 'Conexão de Conta', icon: '🔗' },
     { id: 'nebula-code', label: 'Nebula Code', icon: '💻' },
   ];
 
@@ -553,7 +553,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                     <p>Gerencie seus tokens para o Rastreador de Cota.</p>
                     <button className="btn-premium-action mini" onClick={() => setShowAddModal(true)}>
                       <span className="material-symbols-outlined">add</span>
-                      Nova Conexão
+                      Nova Conexão de Conta
                     </button>
                   </div>
 
@@ -794,7 +794,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
       {showAddModal && (
         <div className="settings-modal-overlay fade-in">
           <div className="settings-modal glass">
-            <h3>Nova Conexão de API</h3>
+            <h3>Nova Conexão de Conta</h3>
             <div className="modal-form">
               <div className="mode-selector glass">
                 <button 

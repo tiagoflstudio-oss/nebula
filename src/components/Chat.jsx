@@ -496,11 +496,11 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                 <div className="controls-right">
                   <div className="model-selector-container">
                     <div 
-                      className={`model-selector-mini glass ${ollamaConfig.global_ia_enabled ? 'global-locked' : ''}`} 
-                      onClick={() => !ollamaConfig.global_ia_enabled && setShowModelSelector(!showModelSelector)}
-                      title={ollamaConfig.global_ia_enabled ? "Modo Global Ativo (Configurado nas Definições)" : "Clique para trocar o motor"}
+                      className={`model-selector-mini glass ${ollamaConfig.global_ia_enabled ? 'global-mode' : ''}`} 
+                      onClick={() => setShowModelSelector(!showModelSelector)}
+                      title="Clique para trocar o motor de IA"
                     >
-                      <span className="dot-engine"></span>
+                      <span className={`dot-engine ${ollamaConfig.global_ia_enabled ? 'global' : ''}`}></span>
                       <span>{getCurrentModelDisplay()}</span>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: showModelSelector ? 'rotate(180deg)' : 'none' }}>
                         <path d="M6 9l6 6 6-6" />
@@ -525,7 +525,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                                               ollamaConfig.active_provider === p.id ? 'active' : ''}`}
                                   disabled={p.key && !ollamaConfig[p.key]}
                                   onClick={() => {
-                                    const newConfig = { ...ollamaConfig, active_provider: p.id };
+                                    const newConfig = { ...ollamaConfig, active_provider: p.id, global_ia_enabled: false };
                                     if (p.id === 'ollama') newConfig.model = m;
                                     if (p.id === 'openai') newConfig.openai_model = m;
                                     if (p.id === 'anthropic') newConfig.anthropic_model = m;

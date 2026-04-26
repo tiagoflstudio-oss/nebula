@@ -1,20 +1,43 @@
 import React, { useState } from 'react';
 import './MasterOSPage.css';
 
-const MasterOSPage = ({ config, setConfig, onSave }) => {
+const MasterOSPage = ({ config, setConfig, onSave, masterStats, globalSettings }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  const getActiveConnectionsCount = () => {
+    let count = 0;
+    if (globalSettings?.openai_key) count++;
+    if (globalSettings?.anthropic_key) count++;
+    if (globalSettings?.google_key) count++;
+    return count;
+  };
+
   const stats = [
-    { label: 'Conexões Ativas', value: '4', icon: 'link', color: '#10b981' },
-    { label: 'Clientes Master', value: '12', icon: 'group', color: '#8b5cf6' },
-    { label: 'Uso de Tokens (24h)', value: '84k', icon: 'database', color: '#3b82f6' },
-    { label: 'Performance Global', value: '98%', icon: 'bolt', color: '#fbbf24' },
+    { label: 'Conexões Ativas', value: getActiveConnectionsCount().toString(), icon: 'link', color: '#10b981' },
+    { label: 'Clientes Master', value: (masterStats?.userCount || 0).toString(), icon: 'group', color: '#8b5cf6' },
+    { label: 'Uso de Tokens (24h)', value: 'Ativo', icon: 'database', color: '#3b82f6' },
+    { label: 'Performance Global', value: '100%', icon: 'bolt', color: '#fbbf24' },
   ];
 
   const providers = [
-    { id: 'openai', name: 'OpenAI', status: 'online', models: ['gpt-4o', 'gpt-4-turbo'] },
-    { id: 'anthropic', name: 'Anthropic', status: 'online', models: ['claude-3-5-sonnet'] },
-    { id: 'google', name: 'Google Gemini', status: 'online', models: ['gemini-1.5-pro'] },
+    { 
+      id: 'openai', 
+      name: 'OpenAI', 
+      status: globalSettings?.openai_key ? 'online' : 'offline', 
+      models: globalSettings?.fetched_openai_models || [] 
+    },
+    { 
+      id: 'anthropic', 
+      name: 'Anthropic', 
+      status: globalSettings?.anthropic_key ? 'online' : 'offline', 
+      models: globalSettings?.fetched_anthropic_models || [] 
+    },
+    { 
+      id: 'google', 
+      name: 'Google Gemini', 
+      status: globalSettings?.google_key ? 'online' : 'offline', 
+      models: globalSettings?.fetched_google_models || [] 
+    },
     { id: 'opencode', name: 'OpenCode', status: 'offline', models: [] },
   ];
 

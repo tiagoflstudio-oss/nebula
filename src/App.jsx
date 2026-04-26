@@ -24,6 +24,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [userRole, setUserRole] = useState('user');
   const [globalSettings, setGlobalSettings] = useState(null);
+  const [masterStats, setMasterStats] = useState({ userCount: 0 });
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -189,6 +190,15 @@ function App() {
       if (globalData?.settings) {
         console.log("🌐 Nebula: Cérebro Mestre Global detectado");
         setGlobalSettings(globalData.settings);
+      }
+
+      // Busca estatísticas para o Master OS (Apenas para Admin/VIP)
+      if (data?.role === 'admin' || data?.role === 'vip') {
+        const { count } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        
+        setMasterStats({ userCount: count || 0 });
       }
     } catch (error) {
       console.error('❌ Nebula: Erro crítico:', error);
@@ -391,6 +401,8 @@ function App() {
           config={config} 
           setConfig={setConfig} 
           onSave={handleSaveConfig} 
+          masterStats={masterStats}
+          globalSettings={globalSettings}
         />
       );
     }

@@ -1382,6 +1382,16 @@ svg {
   color: white;
 }
 
+.model-selector-mini.global-mode {
+  border-color: var(--accent-primary);
+  background: rgba(129, 140, 248, 0.1) !important;
+}
+
+.dot-engine.global {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
 .model-option.active {
   background: var(--accent-primary);
   border-color: var(--accent-primary);

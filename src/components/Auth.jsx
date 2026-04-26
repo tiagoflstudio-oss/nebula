@@ -10,6 +10,7 @@ const Auth = () => {
   const [error, setError] = useState(null);
 
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -109,12 +110,22 @@ const Auth = () => {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button 
+                  type="button"
+                  className="btn-eye" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? "Esconder senha" : "Mostrar senha"}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
               </div>
             </div>
 

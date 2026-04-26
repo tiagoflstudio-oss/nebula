@@ -23,6 +23,7 @@ import MasterOSPage from './pages/MasterOSPage';
 function App() {
   const [session, setSession] = useState(null);
   const [userRole, setUserRole] = useState('user');
+  const [globalSettings, setGlobalSettings] = useState(null);
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -154,6 +155,8 @@ function App() {
     if (!session?.user) return;
     try {
       console.log("🔍 Nebula: Buscando perfil e configurações para:", session.user.email);
+      
+      // Busca perfil do usuário atual
       const { data, error } = await supabase
         .from('profiles')
         .select('role, full_name, settings')
@@ -171,8 +174,21 @@ function App() {
           console.log("✅ Nebula: Configurações sincronizadas da nuvem");
           setConfig(prev => ({ ...prev, ...data.settings }));
         }
-      } else {
-        console.warn("⚠️ Nebula: Perfil não encontrado no banco.");
+      }
+
+      // Busca configuração global (Prioridade: Admin > Primeiro VIP)
+      const { data: globalData } = await supabase
+        .from('profiles')
+        .select('settings')
+        .or('role.eq.admin,role.eq.vip')
+        .order('role', { ascending: true }) // admin vem antes de vip alfabeticamente
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (globalData?.settings) {
+        console.log("🌐 Nebula: Cérebro Mestre Global detectado");
+        setGlobalSettings(globalData.settings);
       }
     } catch (error) {
       console.error('❌ Nebula: Erro crítico:', error);
@@ -360,6 +376,7 @@ function App() {
           session={session} 
           onSave={handleSaveConfig}
           setModalConfig={setModalConfig}
+          globalSettings={globalSettings}
         />
       );
     }
@@ -421,6 +438,7 @@ function App() {
               setSelectedChatId(id);
               fetchChats();
             }}
+            globalSettings={globalSettings}
           />
         </div>
     );

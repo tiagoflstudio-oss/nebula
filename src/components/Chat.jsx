@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
+const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalSettings }) => {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Olá! Sou o Nebula AI. Como posso ajudar você hoje?' }
   ]);
@@ -10,6 +10,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef(null);
+  const skipInitialFetch = useRef(false);
 
   // Sistema de Voz
   const recognitionRef = useRef(null);
@@ -55,6 +56,10 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
   // Carregar histórico quando o chat_id mudar
   useEffect(() => {
     if (chatId) {
+      if (skipInitialFetch.current) {
+        skipInitialFetch.current = false;
+        return;
+      }
       fetchMessages();
     } else {
       setMessages([{ role: 'assistant', content: 'Olá! Sou o Nebula AI. Como posso ajudar você hoje?' }]);
@@ -114,6 +119,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
           .select();
         if (error) throw error;
         currentChatId = data[0].id;
+        skipInitialFetch.current = true;
         if (onChatCreated) onChatCreated(currentChatId);
       } catch (error) {
         console.error('Erro ao criar chat automático:', error.message);
@@ -131,14 +137,19 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
     try {
       // Lógica de Override do Cérebro Mestre (IA Global)
       const isGlobalIA = ollamaConfig.global_ia_enabled;
-      const provider = isGlobalIA ? (ollamaConfig.global_provider || 'openai') : (ollamaConfig.active_provider || 'ollama');
-      const activeModel = isGlobalIA ? (ollamaConfig.global_model || 'gpt-4o') : (
+      
+      // Se Global IA estiver ativo, usa as configs do ADMIN (globalSettings)
+      // Caso contrário, usa as configs INDIVIDUAIS do usuário (ollamaConfig)
+      const provider = isGlobalIA ? (globalSettings?.global_provider || 'openai') : (ollamaConfig.active_provider || 'ollama');
+      
+      const activeModel = isGlobalIA ? (globalSettings?.global_model || 'gpt-4o') : (
         provider === 'openai' ? ollamaConfig.openai_model :
         provider === 'anthropic' ? ollamaConfig.anthropic_model :
         provider === 'google' ? ollamaConfig.google_model :
         ollamaConfig.model
       );
-      const activeKey = isGlobalIA ? ollamaConfig.global_api_key : (
+
+      const activeKey = isGlobalIA ? globalSettings?.global_api_key : (
         provider === 'openai' ? ollamaConfig.openai_key :
         provider === 'anthropic' ? ollamaConfig.anthropic_key :
         provider === 'google' ? ollamaConfig.google_key :
@@ -427,13 +438,16 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
     ];
     
     if (ollamaConfig.openai_key) {
-      list.push({ id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'] });
+      const models = ollamaConfig.fetched_openai_models || ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+      list.push({ id: 'openai', name: 'OpenAI', models, key: 'openai_key' });
     }
     if (ollamaConfig.anthropic_key) {
-      list.push({ id: 'anthropic', name: 'Anthropic', models: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'] });
+      const models = ollamaConfig.fetched_anthropic_models || ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
+      list.push({ id: 'anthropic', name: 'Anthropic', models, key: 'anthropic_key' });
     }
     if (ollamaConfig.google_key) {
-      list.push({ id: 'google', name: 'Google Gemini', models: ['gemini-1.5-pro', 'gemini-1.5-flash'] });
+      const models = ollamaConfig.fetched_google_models || ['gemini-1.5-pro', 'gemini-1.5-flash'];
+      list.push({ id: 'google', name: 'Google Gemini', models, key: 'google_key' });
     }
     
     return list;

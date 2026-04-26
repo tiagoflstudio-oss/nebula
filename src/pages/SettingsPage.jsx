@@ -114,7 +114,25 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
 
   const IntegrationRow = ({ label, description, value, field, placeholder, onTest, setConfig, config }) => {
     const [showKey, setShowKey] = useState(false);
+    const [syncStatus, setSyncStatus] = useState('idle'); // idle, loading, success, error
     
+    const handleSync = async () => {
+      setSyncStatus('loading');
+      try {
+        const result = await onTest(value);
+        // Se onTest não retornar nada, assumimos sucesso se não houver erro, 
+        // ou verificamos se ele retorna explicitamente false em caso de erro interno.
+        if (result === false) {
+          setSyncStatus('error');
+        } else {
+          setSyncStatus('success');
+        }
+      } catch (err) {
+        setSyncStatus('error');
+      }
+      setTimeout(() => setSyncStatus('idle'), 5000);
+    };
+
     return (
       <div className="setting-row">
         <div className="setting-info">
@@ -127,7 +145,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
               type={showKey ? "text" : "password"} 
               className="glass-input api-key-input"
               value={value || ''} 
-              onChange={(e) => setConfig({...config, [field]: e.target.value})}
+              onChange={(e) => {
+                setConfig({...config, [field]: e.target.value});
+                setSyncStatus('idle');
+              }}
               placeholder={placeholder || "Inserir API Key..."}
               autoComplete="new-password"
             />
@@ -140,10 +161,13 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
             </button>
           </div>
           <button 
-            className="test-api-btn glass"
-            onClick={() => onTest(value)}
+            className={`test-api-btn glass sync-mode ${syncStatus}`}
+            onClick={handleSync}
+            disabled={syncStatus === 'loading'}
           >
-            Testar
+            {syncStatus === 'loading' ? '...' : 
+             syncStatus === 'success' ? 'Sincronizado ✅' : 
+             syncStatus === 'error' ? 'Erro ❌' : 'Sincronizar'}
           </button>
         </div>
       </div>
@@ -374,25 +398,27 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                     />
                   </div>
                   
-                  <div className="settings-footer">
-                    <button 
-                      className="sync-btn-premium"
-                      onClick={async () => {
-                        showToast("Sincronizando com a nuvem...", "info");
-                        const success = await onSave(config);
-                        if (success) {
-                          showToast("Configurações salvas no Supabase! 🌌", "success");
-                        } else {
-                          showToast("Erro ao salvar. Verifique se a coluna 'settings' existe.", "error");
-                        }
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 2v6h-6M3 22v-6h6M21 13A9 9 0 1 1 3 8l3 3M18 13l-3-3 3-3" />
-                      </svg>
-                      Sincronizar Motores
-                    </button>
-                  </div>
+                    <div className="settings-footer">
+                      <button 
+                        className="sync-btn-premium"
+                        onClick={async () => {
+                          showToast("Gravando motores no Supabase...", "info");
+                          const success = await onSave(config);
+                          if (success) {
+                            showToast("Motores salvos com sucesso! 🌌", "success");
+                          } else {
+                            showToast("Erro ao salvar motores.", "error");
+                          }
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                          <polyline points="17 21 17 13 7 13 7 21" />
+                          <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Salvar Motores
+                      </button>
+                    </div>
                 </div>
               )}
               {activeSection === 'ia-global' && (

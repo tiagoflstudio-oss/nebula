@@ -3504,6 +3504,25 @@ select.glass-input:focus, select.mini-select:focus {
   font-size: 12px;
 }
 
+.test-api-btn.sync-mode.success {
+  background: rgba(0, 255, 128, 0.2) !important;
+  border-color: #00ff80 !important;
+  color: #00ff80 !important;
+  box-shadow: 0 0 15px rgba(0, 255, 128, 0.3);
+}
+
+.test-api-btn.sync-mode.error {
+  background: rgba(255, 48, 48, 0.2) !important;
+  border-color: #ff3030 !important;
+  color: #ff3030 !important;
+  box-shadow: 0 0 15px rgba(255, 48, 48, 0.3);
+}
+
+.test-api-btn.sync-mode.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .model-dropdown-portal {
   position: absolute;
   bottom: calc(100% + 12px);

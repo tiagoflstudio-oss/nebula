@@ -480,26 +480,46 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
   };
 
   const getCurrentModelDisplay = () => {
+    const format = (m) => m?.split('/').pop().replace(/-\d{4}-\d{2}-\d{2}$/, '').toUpperCase();
+    
     if (ollamaConfig.global_ia_enabled) {
-      return `🌐 ${ollamaConfig.global_selected_model?.split('/').pop()?.toUpperCase() || 'MESTRE'}`;
+      return `🌐 ${format(ollamaConfig.global_selected_model) || 'MESTRE'}`;
     }
     const provider = ollamaConfig.active_provider || 'ollama';
-    if (provider === 'openai') return ollamaConfig.openai_model || 'GPT-4o';
-    if (provider === 'anthropic') return 'Claude 3.5';
-    if (provider === 'google') return 'Gemini 1.5 Pro';
-    if (provider === 'openrouter') return 'OpenRouter';
+    if (provider === 'openai') return format(ollamaConfig.openai_model) || 'GPT-4O';
+    if (provider === 'anthropic') return 'CLAUDE 3.5';
+    if (provider === 'google') return 'GEMINI 1.5 PRO';
+    if (provider === 'openrouter') return format(ollamaConfig.openrouter_model) || 'OPENROUTER';
     return ollamaConfig.model?.charAt(0).toUpperCase() + ollamaConfig.model?.slice(1);
   };
 
   const getProvidersForConfig = (configSource) => {
     if (!configSource) return [];
+    
+    // Função auxiliar para formatar e limpar nomes de modelos
+    const formatModelName = (m) => {
+      let name = m.split('/').pop(); // Remove o provedor se houver (ex: openai/...)
+      name = name.replace(/-\d{4}-\d{2}-\d{2}$/, ''); // Remove datas (ex: -2024-05-13)
+      return name.split('-').join(' ').toUpperCase();
+    };
+
     const list = [
       { id: 'ollama', name: 'Ollama (Local)', models: ['llama3', 'mistral', 'phi3'] },
     ];
     
     if (configSource.openai_key) {
-      const models = configSource.fetched_openai_models || ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
-      list.push({ id: 'openai', name: 'OpenAI', models, key: 'openai_key' });
+      const rawModels = configSource.fetched_openai_models || ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+      // Deduplicação inteligente
+      const seen = new Set();
+      const uniqueModels = [];
+      rawModels.forEach(m => {
+        const display = formatModelName(m);
+        if (!seen.has(display)) {
+          seen.add(display);
+          uniqueModels.push(m);
+        }
+      });
+      list.push({ id: 'openai', name: 'OpenAI', models: uniqueModels, key: 'openai_key' });
     }
     if (configSource.anthropic_key) {
       const models = configSource.fetched_anthropic_models || ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
@@ -510,8 +530,17 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       list.push({ id: 'google', name: 'Google Gemini', models, key: 'google_key' });
     }
     if (configSource.openrouter_key) {
-      const models = configSource.fetched_openrouter_models || ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct'];
-      list.push({ id: 'openrouter', name: 'OpenRouter', models, key: 'openrouter_key' });
+      const rawModels = configSource.fetched_openrouter_models || ['meta-llama/llama-3-70b-instruct'];
+      const seen = new Set();
+      const uniqueModels = [];
+      rawModels.forEach(m => {
+        const display = formatModelName(m);
+        if (!seen.has(display)) {
+          seen.add(display);
+          uniqueModels.push(m);
+        }
+      });
+      list.push({ id: 'openrouter', name: 'OpenRouter', models: uniqueModels, key: 'openrouter_key' });
     }
     
     return list;
@@ -631,7 +660,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                                       setShowModelSelector(false);
                                     }}
                                   >
-                                    {m.split('-').slice(0, 2).join(' ').toUpperCase()}
+                                    {m.split('/').pop().replace(/-\d{4}-\d{2}-\d{2}$/, '').split('-').join(' ').toUpperCase()}
                                   </button>
                                 );
                               })}

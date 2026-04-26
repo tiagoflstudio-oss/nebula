@@ -1,13 +1,56 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
+const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Olá! Sou o Nebula AI. Como posso ajudar você hoje?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef(null);
+
+  // Sistema de Voz
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'pt-BR';
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(prev => prev + (prev ? ' ' : '') + transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Erro no reconhecimento de voz:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      if (!recognitionRef.current) {
+        alert("Seu navegador não suporta reconhecimento de voz.");
+        return;
+      }
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   // Carregar histórico quando o chat_id mudar
   useEffect(() => {
@@ -63,7 +106,6 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
 
     let currentChatId = chatId;
 
-    // Se não houver chatId, cria um novo chat automaticamente
     if (!currentChatId) {
       try {
         const { data, error } = await supabase
@@ -84,16 +126,10 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
     setInput('');
     setLoading(true);
 
-    // Salvar mensagem do usuário no banco
     await saveMessage('user', input, currentChatId);
 
     try {
-      // 1. Auditoria do Motor: Determinar Provedor
-      let provider = 'ollama';
-      if (ollamaConfig.anthropic_key) provider = 'anthropic';
-      else if (ollamaConfig.google_key) provider = 'google';
-      else if (ollamaConfig.openai_key) provider = 'openai';
-      
+      const provider = ollamaConfig.active_provider || 'ollama';
       console.log(`%c[Nebula Engine] Motor Ativo: ${provider.toUpperCase()}`, 'color: #818cf8; font-weight: bold;');
 
       let projectContext = "";
@@ -117,7 +153,6 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
       let assistantContent = '';
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
-      // --- ROTA ANTHROPIC ---
       if (provider === 'anthropic') {
         const response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -128,7 +163,7 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
             'dangerously-allow-browser': 'true'
           },
           body: JSON.stringify({
-            model: 'claude-3-5-sonnet-20240620',
+            model: ollamaConfig.anthropic_model || 'claude-3-5-sonnet-20240620',
             max_tokens: 4096,
             messages: payloadMessages.filter(m => m.role !== 'system'),
             system: systemMessage.content,
@@ -164,9 +199,8 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
           }
         }
       }
-      // --- ROTA GOOGLE (GEMINI) ---
       else if (provider === 'google') {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:streamGenerateContent?key=${ollamaConfig.google_key}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ollamaConfig.google_model || 'gemini-1.5-pro'}:streamGenerateContent?key=${ollamaConfig.google_key}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -205,7 +239,6 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
           }
         }
       }
-      // --- ROTA OPENAI ---
       else if (provider === 'openai') {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -214,13 +247,16 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
             'Authorization': `Bearer ${ollamaConfig.openai_key}`
           },
           body: JSON.stringify({
-            model: 'gpt-4o',
+            model: ollamaConfig.openai_model || 'gpt-4o',
             messages: payloadMessages,
             stream: true
           })
         });
 
-        if (!response.ok) throw new Error('Falha na API da OpenAI. Verifique sua chave.');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(`OpenAI Error ${response.status}: ${errorData.error?.message || response.statusText}`);
+        }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -246,7 +282,6 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
           }
         }
       }
-      // --- ROTA OLLAMA (Local) ---
       else {
         const response = await fetch(`http://${ollamaConfig.ip}:${ollamaConfig.port}/api/chat`, {
           method: 'POST',
@@ -285,7 +320,6 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
         }
       }
 
-      // Salvar resposta completa da IA no banco
       await saveMessage('assistant', assistantContent, currentChatId);
 
     } catch (error) {
@@ -299,7 +333,9 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
   };
 
   const renderContent = (content) => {
+    // Primeiro isolamos os blocos de código
     const parts = content.split(/(```[\s\S]*?```)/g);
+    
     return parts.map((part, idx) => {
       if (part.startsWith('```')) {
         const match = part.match(/```(\w+)?\n?([\s\S]*?)```/);
@@ -309,18 +345,32 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
           <div key={idx} className="code-block">
             <div className="code-header">
               <span className="code-lang">{lang}</span>
-              <button 
-                className="btn-copy" 
-                onClick={() => navigator.clipboard.writeText(code)}
-              >
-                Copiar
-              </button>
+              <button className="btn-copy" onClick={() => navigator.clipboard.writeText(code)}>Copiar</button>
             </div>
             <pre><code>{code}</code></pre>
           </div>
         );
       }
-      return <p key={idx} style={{ whiteSpace: 'pre-wrap', marginBottom: '10px' }}>{part}</p>;
+      
+      // Processamento simples de Markdown para o texto
+      let formattedText = part
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrito
+        .replace(/\*(.*?)\*/g, '<em>$1</em>') // Itálico
+        .replace(/^\s*-\s+(.*)$/gm, '<li>$1</li>') // Listas com hífen
+        .replace(/^\s*\d+\.\s+(.*)$/gm, '<li>$1</li>'); // Listas numeradas
+
+      // Envolver listas em <ul> se houver <li>
+      if (formattedText.includes('<li>')) {
+        formattedText = formattedText.replace(/(<li>.*<\/li>)/gs, '<ul class="chat-list">$1</ul>');
+      }
+
+      return (
+        <div 
+          key={idx} 
+          className="markdown-text" 
+          dangerouslySetInnerHTML={{ __html: formattedText.replace(/\n/g, '<br/>') }}
+        />
+      );
     });
   };
 
@@ -331,6 +381,21 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
     if (hour < 18) return `Boa tarde, ${name}`;
     return `Boa noite, ${name}`;
   };
+
+  const getCurrentModelDisplay = () => {
+    const provider = ollamaConfig.active_provider || 'ollama';
+    if (provider === 'openai') return ollamaConfig.openai_model || 'GPT-4o';
+    if (provider === 'anthropic') return 'Claude 3.5';
+    if (provider === 'google') return 'Gemini 1.5 Pro';
+    return ollamaConfig.model.charAt(0).toUpperCase() + ollamaConfig.model.slice(1);
+  };
+
+  const providers = [
+    { id: 'ollama', name: 'Ollama (Local)', models: ['llama3', 'mistral', 'phi3'] },
+    { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'], key: 'openai_key' },
+    { id: 'anthropic', name: 'Anthropic', models: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'], key: 'anthropic_key' },
+    { id: 'google', name: 'Google Gemini', models: ['gemini-1.5-pro', 'gemini-1.5-flash'], key: 'google_key' }
+  ];
 
   return (
     <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
@@ -352,33 +417,82 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
                 autoFocus
               />
               <div className="chat-input-controls">
-            <div className="controls-left">
-              <button className="input-action-btn" title="Anexar arquivo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="controls-right">
-              <div className="model-selector-mini glass">
-                <span>Nebula Pro</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
+                <div className="controls-left">
+                  <button className="input-action-btn" title="Anexar arquivo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                  <button 
+                    className={`voice-btn ${isListening ? 'listening' : ''}`} 
+                    onClick={toggleListening} 
+                    title={isListening ? "Ouvindo..." : "Usar Microfone"}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="controls-right">
+                  <div className="model-selector-container">
+                    <div 
+                      className="model-selector-mini glass" 
+                      onClick={() => setShowModelSelector(!showModelSelector)}
+                      title="Clique para trocar o motor"
+                    >
+                      <span className="dot-engine"></span>
+                      <span>{getCurrentModelDisplay()}</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: showModelSelector ? 'rotate(180deg)' : 'none' }}>
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </div>
+
+                    {showModelSelector && (
+                      <div className="model-dropdown-portal glass fade-in">
+                        {providers.map(p => (
+                          <div key={p.id} className="provider-group">
+                            <label className={(!p.key || ollamaConfig[p.key]) ? '' : 'locked'}>
+                              {p.name} {(!p.key || ollamaConfig[p.key]) ? '' : '🔒'}
+                            </label>
+                            <div className="models-list">
+                              {p.models.map(m => (
+                                <button
+                                  key={m}
+                                  className={`model-option ${((p.id === 'ollama' && ollamaConfig.model === m) || 
+                                              (p.id === 'openai' && ollamaConfig.openai_model === m) ||
+                                              (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
+                                              (p.id === 'google' && ollamaConfig.google_model === m)) && 
+                                              ollamaConfig.active_provider === p.id ? 'active' : ''}`}
+                                  disabled={p.key && !ollamaConfig[p.key]}
+                                  onClick={() => {
+                                    const newConfig = { ...ollamaConfig, active_provider: p.id };
+                                    if (p.id === 'ollama') newConfig.model = m;
+                                    if (p.id === 'openai') newConfig.openai_model = m;
+                                    if (p.id === 'anthropic') newConfig.anthropic_model = m;
+                                    if (p.id === 'google') newConfig.google_model = m;
+                                    setConfig(newConfig);
+                                    setShowModelSelector(false);
+                                  }}
+                                >
+                                  {m.split('-').slice(0, 2).join(' ').toUpperCase()}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button className={`send-btn ${input.trim() ? 'active' : ''}`} onClick={handleSend} disabled={!input.trim()}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-              
-              <button 
-                className={`send-btn ${input.trim() ? 'active' : ''}`}
-                onClick={handleSend}
-                disabled={!input.trim()}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
-              </button>
-            </div>
-          </div>
             </div>
 
             <div className="skills-row">
@@ -393,42 +507,97 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
       )}
 
       {chatId && (
-        <div className="chat-messages" ref={scrollRef}>
-          {messages.map((msg, idx) => (
-            <div key={idx} className={`message-wrapper ${msg.role}`}>
-              <div className={`message ${msg.role} glass`}>
-                {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
+        <>
+          <div className="chat-messages" ref={scrollRef}>
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`message-wrapper ${msg.role}`}>
+                <div className={`message ${msg.role} glass`}>
+                  {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
+                </div>
               </div>
-            </div>
-          ))}
-          {loading && messages[messages.length-1].role === 'user' && (
-            <div className="message-wrapper assistant">
-              <div className="message assistant loading">
-                <div className="typing-dot"></div>
-                <div className="typing-dot"></div>
-                <div className="typing-dot"></div>
+            ))}
+            {loading && messages[messages.length-1].role === 'user' && (
+              <div className="message-wrapper assistant">
+                <div className="message assistant loading">
+                  <div className="typing-dot"></div>
+                  <div className="typing-dot"></div>
+                  <div className="typing-dot"></div>
+                </div>
               </div>
+            )}
+          </div>
+          <div className="chat-input-wrapper bottom glass">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Pergunte qualquer coisa..."
+              autoFocus
+            />
+            <div className="bottom-input-actions">
+              <button 
+                className={`voice-btn-mini ${isListening ? 'listening' : ''}`} 
+                onClick={toggleListening}
+                title={isListening ? "Ouvindo..." : "Usar Microfone"}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+                </svg>
+              </button>
             </div>
-          )}
-        </div>
-      )}
-      
-      {chatId && (
-        <div className="chat-input-wrapper bottom glass">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Pergunte qualquer coisa..."
-            autoFocus
-          />
-          <button onClick={handleSend} disabled={loading}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </div>
+            <div className="model-selector-container mini-bottom">
+               <div 
+                  className="model-selector-mini glass" 
+                  onClick={() => setShowModelSelector(!showModelSelector)}
+                >
+                  <span className="dot-engine"></span>
+                  <span>{getCurrentModelDisplay()}</span>
+                </div>
+                {showModelSelector && (
+                  <div className="model-dropdown-portal glass bottom-mode fade-in">
+                     {providers.map(p => (
+                          <div key={p.id} className="provider-group">
+                            <label className={(!p.key || ollamaConfig[p.key]) ? '' : 'locked'}>
+                              {p.name} {(!p.key || ollamaConfig[p.key]) ? '' : '🔒'}
+                            </label>
+                            <div className="models-list">
+                              {p.models.map(m => (
+                                <button
+                                  key={m}
+                                  className={`model-option ${((p.id === 'ollama' && ollamaConfig.model === m) || 
+                                              (p.id === 'openai' && ollamaConfig.openai_model === m) ||
+                                              (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
+                                              (p.id === 'google' && ollamaConfig.google_model === m)) && 
+                                              ollamaConfig.active_provider === p.id ? 'active' : ''}`}
+                                  disabled={p.key && !ollamaConfig[p.key]}
+                                  onClick={() => {
+                                    const newConfig = { ...ollamaConfig, active_provider: p.id };
+                                    if (p.id === 'ollama') newConfig.model = m;
+                                    if (p.id === 'openai') newConfig.openai_model = m;
+                                    if (p.id === 'anthropic') newConfig.anthropic_model = m;
+                                    if (p.id === 'google') newConfig.google_model = m;
+                                    setConfig(newConfig);
+                                    setShowModelSelector(false);
+                                  }}
+                                >
+                                  {m.split('-').slice(0, 2).join(' ').toUpperCase()}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                  </div>
+                )}
+            </div>
+            <button className="send-btn-circle" onClick={handleSend} disabled={loading}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

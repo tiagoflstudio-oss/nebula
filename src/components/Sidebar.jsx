@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 const Sidebar = ({ 
   onSelectChat, 
@@ -17,7 +18,8 @@ const Sidebar = ({
   isCollapsed,
   onToggle,
   session,
-  userRole
+  userRole,
+  config
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -33,15 +35,6 @@ const Sidebar = ({
             <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
           </svg>
         </button>
-        {!isCollapsed && (
-          <div className="sidebar-logo" onClick={() => {
-            onSelectPage('home');
-            onSelectProject(null);
-            onSelectChat(null);
-          }} style={{ cursor: 'pointer' }}>
-            Nebula <span>AI</span>
-          </div>
-        )}
       </div>
 
       <div className="sidebar-top-actions">
@@ -60,6 +53,7 @@ const Sidebar = ({
             <input 
               type="text" 
               placeholder="Procurar" 
+              autoComplete="off"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -102,6 +96,20 @@ const Sidebar = ({
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {!isCollapsed && <span>Otimizador</span>}
+          </button>
+
+          <button 
+            className={`nav-item ${selectedPage === 'roadmap' ? 'active' : ''}`}
+            onClick={() => onSelectPage('roadmap')}
+            title="Roadmap"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 12h12" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 12h-2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="12" cy="12" r="9"/>
+            </svg>
+            {!isCollapsed && <span>Roadmap</span>}
           </button>
         </nav>
       </div>
@@ -157,7 +165,11 @@ const Sidebar = ({
       </div>
 
       <div className="sidebar-footer">
-        <button className="btn-all-chats" title="Todas as conversas">
+        <button 
+          className={`btn-all-chats ${selectedPage === 'all-chats' ? 'active' : ''}`} 
+          title="Todas as conversas"
+          onClick={() => onSelectPage('all-chats')}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
           </svg>
@@ -169,20 +181,30 @@ const Sidebar = ({
           )}
         </button>
 
-        <div className="user-profile" onClick={() => onSelectPage('settings')} title="Configurações">
-          <div className="user-avatar">
+        <div className="user-profile">
+          <div className="user-avatar" onClick={() => onSelectPage('settings')} style={{ cursor: 'pointer' }}>
             {session?.user?.email?.[0].toUpperCase()}
           </div>
           {!isCollapsed && (
-            <div className="user-info">
+            <div className="user-info" onClick={() => onSelectPage('settings')} style={{ cursor: 'pointer' }}>
               <span className="user-name">{session?.user?.email?.split('@')[0]}</span>
               <span className="user-plan">{userRole === 'vip' ? 'Plano VIP' : 'Plano Gratuito'}</span>
             </div>
           )}
           {!isCollapsed && (
             <div className="user-actions">
-              <button title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="selector"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg>
+              <button 
+                title="Sair" 
+                className="btn-logout"
+                onClick={async () => {
+                  const { error } = await supabase.auth.signOut();
+                  if (error) console.error('Erro ao sair:', error.message);
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             </div>
           )}
         </div>

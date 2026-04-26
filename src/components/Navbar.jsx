@@ -10,7 +10,7 @@ const Navbar = ({ session, onHome, selectedPage, onSelectPage }) => {
   };
 
   return (
-    <nav className="navbar glass">
+    <nav className="navbar">
       <div className="nav-brand" onClick={onHome} style={{ cursor: 'pointer' }}>
         Nebula <span>AI</span>
       </div>

@@ -90,7 +90,9 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
     try {
       // 1. Auditoria do Motor: Determinar Provedor
       let provider = 'ollama';
-      if (ollamaConfig.openai_key) provider = 'openai';
+      if (ollamaConfig.anthropic_key) provider = 'anthropic';
+      else if (ollamaConfig.google_key) provider = 'google';
+      else if (ollamaConfig.openai_key) provider = 'openai';
       
       console.log(`%c[Nebula Engine] Motor Ativo: ${provider.toUpperCase()}`, 'color: #818cf8; font-weight: bold;');
 
@@ -115,8 +117,96 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
       let assistantContent = '';
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
+      // --- ROTA ANTHROPIC ---
+      if (provider === 'anthropic') {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': ollamaConfig.anthropic_key,
+            'anthropic-version': '2023-06-01',
+            'dangerously-allow-browser': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20240620',
+            max_tokens: 4096,
+            messages: payloadMessages.filter(m => m.role !== 'system'),
+            system: systemMessage.content,
+            stream: true
+          })
+        });
+
+        if (!response.ok) throw new Error('Falha na API da Anthropic. Verifique sua chave.');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const json = JSON.parse(line.substring(6));
+                if (json.type === 'content_block_delta') {
+                  const text = json.delta?.text || '';
+                  assistantContent += text;
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1].content = assistantContent;
+                    return newMessages;
+                  });
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      // --- ROTA GOOGLE (GEMINI) ---
+      else if (provider === 'google') {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:streamGenerateContent?key=${ollamaConfig.google_key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: payloadMessages.filter(m => m.role !== 'system').map(m => ({
+              role: m.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: m.content }]
+            })),
+            systemInstruction: { parts: [{ text: systemMessage.content }] }
+          })
+        });
+
+        if (!response.ok) throw new Error('Falha na API do Google Gemini. Verifique sua chave.');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.trim().startsWith('{') || line.trim().startsWith(',')) {
+              try {
+                const cleanLine = line.trim().startsWith(',') ? line.trim().substring(1) : line.trim();
+                const json = JSON.parse(cleanLine);
+                const text = json.candidates[0]?.content?.parts[0]?.text || '';
+                assistantContent += text;
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1].content = assistantContent;
+                  return newMessages;
+                });
+              } catch (e) {}
+            }
+          }
+        }
+      }
       // --- ROTA OPENAI ---
-      if (provider === 'openai') {
+      else if (provider === 'openai') {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -155,7 +245,7 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
             }
           }
         }
-      } 
+      }
       // --- ROTA OLLAMA (Local) ---
       else {
         const response = await fetch(`http://${ollamaConfig.ip}:${ollamaConfig.port}/api/chat`, {

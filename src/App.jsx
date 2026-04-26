@@ -17,6 +17,7 @@ import Modal from './components/Modal';
 
 function App() {
   const [session, setSession] = useState(null);
+  const [userRole, setUserRole] = useState('user');
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -25,7 +26,11 @@ function App() {
   const [config, setConfig] = useState({
     ip: 'localhost',
     port: '11434',
-    model: 'llama3'
+    model: 'llama3',
+    openai_key: '',
+    anthropic_key: '',
+    google_key: '',
+    opencode_key: ''
   });
   const [modalConfig, setModalConfig] = useState({ 
     isOpen: false, 
@@ -48,10 +53,38 @@ function App() {
 
   useEffect(() => {
     if (session) {
+      fetchProfile();
       fetchChats();
       fetchProjects();
+    } else {
+      setUserRole('user');
     }
   }, [session, selectedProjectId]);
+
+  const fetchProfile = async () => {
+    if (!session?.user) return;
+    try {
+      console.log("🔍 Nebula: Buscando perfil para:", session.user.email);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role, full_name')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error) {
+        console.error("❌ Nebula: Erro ao buscar perfil:", error.message);
+      }
+
+      if (data) {
+        console.log("✅ Nebula: Cargo detectado:", data.role);
+        setUserRole(data.role || 'user');
+      } else {
+        console.warn("⚠️ Nebula: Perfil não encontrado no banco.");
+      }
+    } catch (error) {
+      console.error('❌ Nebula: Erro crítico:', error);
+    }
+  };
 
   const fetchChats = async () => {
     if (!session) return;
@@ -77,6 +110,10 @@ function App() {
       .order('created_at', { ascending: false });
     if (!error) setProjects(data || []);
   };
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   const handleCreateProject = () => {
     setModalConfig({
@@ -161,8 +198,37 @@ function App() {
     }
   };
 
+  const handleDeleteProject = (id, title) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Excluir Projeto',
+      message: `Tem certeza que deseja apagar o projeto "${title}"? Todas as conversas vinculadas a ele serão perdidas permanentemente.`,
+      type: 'confirm',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('projects').delete().eq('id', id);
+          if (error) throw error;
+          if (selectedProjectId === id) setSelectedProjectId(null);
+          fetchProjects();
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Erro ao excluir projeto:', error.message);
+        }
+      }
+    });
+  };
+
   const renderContent = () => {
-    if (selectedChatId === 'settings') return <SettingsPage />;
+    if (selectedChatId === 'settings' || selectedPage === 'settings') {
+      return (
+        <SettingsPage 
+          config={config} 
+          setConfig={setConfig} 
+          userRole={userRole} 
+          session={session} 
+        />
+      );
+    }
     if (selectedPage === 'optimizer') return <OptimizerPage />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;
     if (selectedPage === 'projects-list') {
@@ -170,6 +236,7 @@ function App() {
         <ProjectsListPage 
           projects={projects} 
           onCreateProject={handleCreateProject}
+          onDeleteProject={handleDeleteProject}
           onSelectProject={(id) => {
             setSelectedProjectId(id);
             setSelectedPage('home');
@@ -189,23 +256,22 @@ function App() {
             <p>Inteligência Minimalista</p>
           </div>
         )}
-        <Chat 
-          ollamaConfig={config} 
-          chatId={selectedChatId} 
-          session={session} 
-          onChatCreated={(id) => {
-            setSelectedChatId(id);
-            fetchChats();
-          }}
-        />
-        <AdminPanel config={config} setConfig={setConfig} />
-      </div>
+          <Chat 
+            ollamaConfig={config} 
+            chatId={selectedChatId} 
+            session={session} 
+            onChatCreated={(id) => {
+              setSelectedChatId(id);
+              fetchChats();
+            }}
+          />
+        </div>
     );
   };
 
   return (
     <Router>
-      <div className="app-container">
+      <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Background />
         {session && (
           <Sidebar 
@@ -234,6 +300,10 @@ function App() {
             onDeleteChat={handleDeleteChat}
             onRenameChat={handleRenameChat}
             onPinChat={handlePinChat}
+            isCollapsed={isSidebarCollapsed}
+            onToggle={toggleSidebar}
+            session={session}
+            userRole={userRole}
           />
         )}
         <div className="main-wrapper">

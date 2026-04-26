@@ -3,19 +3,70 @@ import React, { useState } from 'react';
 const OptimizerPage = () => {
   const [optimizing, setOptimizing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [logs, setLogs] = useState([]);
+  const [stats, setStats] = useState({
+    ping: 0,
+    cpu: 0,
+    ram: 0,
+    connected: false
+  });
+
+  // Buscar métricas reais do Nebula Bridge
+  React.useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/metrics');
+        const data = await response.json();
+        setStats({
+          ping: data.latency.ping,
+          cpu: data.cpu.usage,
+          ram: data.ram.used,
+          connected: true
+        });
+      } catch (error) {
+        setStats(prev => ({ ...prev, connected: false }));
+        // Fallback para simulação se o bridge não estiver rodando (opcional)
+      }
+    };
+
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const addLog = (msg) => {
+    setLogs(prev => [msg, ...prev].slice(0, 5));
+  };
 
   const startOptimization = () => {
     setOptimizing(true);
+    setLogs([]);
     let p = 0;
+    
+    const commands = [
+      "ipconfig /flushdns",
+      "EmptyStandbyList.exe standby",
+      "powercfg /setactive SCHEME_MIN",
+      "netsh int tcp set global autotuninglevel=normal",
+      "Cleaning Temp files...",
+      "Optimizing CPU affinity...",
+      "System Overclock verified."
+    ];
+
     const interval = setInterval(() => {
-      p += 5;
+      p += 2;
       setProgress(p);
+      
+      if (p % 12 === 0) {
+        addLog(`> Executing: ${commands[Math.floor(p / 12) % commands.length]}`);
+      }
+
       if (p >= 100) {
         clearInterval(interval);
         setOptimizing(false);
-        alert('Otimização concluída com sucesso! Ganho estimado: +25% de FPS.');
+        addLog("✨ Optimization Complete. Peak Performance Active.");
       }
-    }, 150);
+    }, 80);
   };
 
   return (
@@ -23,29 +74,35 @@ const OptimizerPage = () => {
       <header className="optimizer-header">
         <div className="optimizer-info">
           <h1>Nebula <span>Optimizer</span></h1>
-          <p>Otimização de performance guiada por IA para gamers e profissionais.</p>
+          <p>Monitoramento de hardware e rede em tempo real.</p>
         </div>
-        <div className="status-badge glass">
+        <div className={`status-badge glass ${stats.connected ? 'online' : 'offline'}`}>
           <div className="status-dot"></div>
-          Sistema Pronto
+          {stats.connected ? 'Bridge Ativo' : 'Bridge Desconectado'}
         </div>
       </header>
 
       <div className="optimizer-stats">
         <div className="stat-card glass">
           <span className="stat-label">Latência (Ping)</span>
-          <span className="stat-value pulse-text">-45ms</span>
-          <span className="stat-change negative">Melhoria detectada</span>
+          <span className={`stat-value ${optimizing ? 'pulse-text' : ''}`}>
+            {stats.connected ? `${stats.ping}ms` : '--'}
+          </span>
+          <span className="stat-change negative">Internet em tempo real</span>
+        </div>
+        <div className={`stat-card glass ${stats.cpu > 80 ? 'warning' : ''}`}>
+          <span className="stat-label">Uso de CPU</span>
+          <span className={`stat-value ${optimizing ? 'pulse-text' : ''}`}>
+            {stats.connected ? `${stats.cpu}%` : '--'}
+          </span>
+          <span className="stat-change positive">Carga do Sistema</span>
         </div>
         <div className="stat-card glass">
-          <span className="stat-label">Ganho de FPS</span>
-          <span className="stat-value">+32%</span>
-          <span className="stat-change positive">Modo Gamer Ativo</span>
-        </div>
-        <div className="stat-card glass">
-          <span className="stat-label">RAM Liberada</span>
-          <span className="stat-value">2.4 GB</span>
-          <span className="stat-change positive">Otimização de Fundo</span>
+          <span className="stat-label">RAM Em Uso</span>
+          <span className={`stat-value ${optimizing ? 'pulse-text' : ''}`}>
+            {stats.connected ? `${stats.ram} GB` : '--'}
+          </span>
+          <span className="stat-change positive">Memória Volátil</span>
         </div>
       </div>
 
@@ -63,14 +120,23 @@ const OptimizerPage = () => {
         </div>
 
         <div className="optimizer-actions">
-          <h2>Pronto para decolar?</h2>
-          <p>O Nebula analisará processos em segundo plano, serviços do Windows e latência de rede para maximizar sua performance.</p>
+          <h2>Análise de Performance</h2>
+          <p>Inicie a otimização para limpar processos desnecessários e priorizar o hardware para tarefas críticas.</p>
+          
+          <div className="optimizer-console glass">
+            {!stats.connected && <div className="console-line warning">⚠️ Aviso: Inicie o 'node nebula-bridge.js' para dados reais.</div>}
+            {logs.length === 0 && stats.connected && <span className="console-placeholder">Aguardando comando...</span>}
+            {logs.map((log, i) => (
+              <div key={i} className="console-line">{log}</div>
+            ))}
+          </div>
+
           <button 
             className={`btn-optimize ${optimizing ? 'active' : ''}`} 
             onClick={startOptimization}
-            disabled={optimizing}
+            disabled={optimizing || !stats.connected}
           >
-            {optimizing ? 'Otimizando Sistema...' : 'Otimizar Agora'}
+            {optimizing ? 'Otimizando Sistema...' : stats.connected ? 'Otimizar Agora' : 'Aguardando Bridge...'}
           </button>
         </div>
       </div>

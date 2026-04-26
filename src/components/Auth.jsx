@@ -5,6 +5,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState(null);
 
@@ -15,7 +16,13 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: { full_name: fullName }
+          }
+        });
         if (error) throw error;
         alert('Verifique seu e-mail para confirmar o cadastro!');
       } else {
@@ -37,6 +44,19 @@ const Auth = () => {
       </div>
 
       <form className="auth-form" onSubmit={handleAuth}>
+        {isSignUp && (
+          <div className="auth-input-group">
+            <label>Nome Completo</label>
+            <input
+              type="text"
+              placeholder="Seu nome"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required={isSignUp}
+            />
+          </div>
+        )}
+
         <div className="auth-input-group">
           <label>E-mail</label>
           <input

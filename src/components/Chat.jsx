@@ -8,6 +8,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [selectorMode, setSelectorMode] = useState(ollamaConfig.global_ia_enabled ? 'global' : 'local');
   const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef(null);
   const skipInitialFetch = useRef(false);
@@ -140,23 +141,33 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       
       // Se Global IA estiver ativo, usa as configs do ADMIN (globalSettings)
       // Caso contrário, usa as configs INDIVIDUAIS do usuário (ollamaConfig)
-      const provider = isGlobalIA ? (globalSettings?.global_provider || 'openai') : (ollamaConfig.active_provider || 'ollama');
+      const provider = isGlobalIA 
+        ? (ollamaConfig.global_selected_provider || globalSettings?.global_provider || 'openai') 
+        : (ollamaConfig.active_provider || 'ollama');
       
-      const activeModel = isGlobalIA ? (globalSettings?.global_model || 'gpt-4o') : (
-        provider === 'openai' ? ollamaConfig.openai_model :
-        provider === 'anthropic' ? ollamaConfig.anthropic_model :
-        provider === 'google' ? ollamaConfig.google_model :
-        provider === 'openrouter' ? ollamaConfig.openrouter_model :
-        ollamaConfig.model
-      );
+      const activeModel = isGlobalIA 
+        ? (ollamaConfig.global_selected_model || globalSettings?.global_model || 'gpt-4o') 
+        : (
+          provider === 'openai' ? ollamaConfig.openai_model :
+          provider === 'anthropic' ? ollamaConfig.anthropic_model :
+          provider === 'google' ? ollamaConfig.google_model :
+          provider === 'openrouter' ? ollamaConfig.openrouter_model :
+          ollamaConfig.model
+        );
 
-      const activeKey = isGlobalIA ? globalSettings?.global_api_key : (
-        provider === 'openai' ? ollamaConfig.openai_key :
-        provider === 'anthropic' ? ollamaConfig.anthropic_key :
-        provider === 'google' ? ollamaConfig.google_key :
-        provider === 'openrouter' ? ollamaConfig.openrouter_key :
-        null
-      );
+      const activeKey = isGlobalIA ? (
+          provider === 'openai' ? globalSettings?.openai_key :
+          provider === 'anthropic' ? globalSettings?.anthropic_key :
+          provider === 'google' ? globalSettings?.google_key :
+          provider === 'openrouter' ? globalSettings?.openrouter_key :
+          globalSettings?.global_api_key
+        ) : (
+          provider === 'openai' ? ollamaConfig.openai_key :
+          provider === 'anthropic' ? ollamaConfig.anthropic_key :
+          provider === 'google' ? ollamaConfig.google_key :
+          provider === 'openrouter' ? ollamaConfig.openrouter_key :
+          null
+        );
 
       console.log(`%c[Nebula Engine] ${isGlobalIA ? '🌐 MODO GLOBAL ATIVO' : '🏠 Modo Local'}: ${provider.toUpperCase()} (${activeModel})`, 'color: #818cf8; font-weight: bold;');
 
@@ -470,34 +481,36 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
 
   const getCurrentModelDisplay = () => {
     if (ollamaConfig.global_ia_enabled) {
-      return `🌐 ${ollamaConfig.global_model?.toUpperCase() || 'MESTRE'}`;
+      return `🌐 ${ollamaConfig.global_selected_model?.split('/').pop()?.toUpperCase() || 'MESTRE'}`;
     }
     const provider = ollamaConfig.active_provider || 'ollama';
     if (provider === 'openai') return ollamaConfig.openai_model || 'GPT-4o';
     if (provider === 'anthropic') return 'Claude 3.5';
     if (provider === 'google') return 'Gemini 1.5 Pro';
+    if (provider === 'openrouter') return 'OpenRouter';
     return ollamaConfig.model?.charAt(0).toUpperCase() + ollamaConfig.model?.slice(1);
   };
 
-  const getAvailableProviders = () => {
+  const getProvidersForConfig = (configSource) => {
+    if (!configSource) return [];
     const list = [
       { id: 'ollama', name: 'Ollama (Local)', models: ['llama3', 'mistral', 'phi3'] },
     ];
     
-    if (ollamaConfig.openai_key) {
-      const models = ollamaConfig.fetched_openai_models || ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+    if (configSource.openai_key) {
+      const models = configSource.fetched_openai_models || ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
       list.push({ id: 'openai', name: 'OpenAI', models, key: 'openai_key' });
     }
-    if (ollamaConfig.anthropic_key) {
-      const models = ollamaConfig.fetched_anthropic_models || ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
+    if (configSource.anthropic_key) {
+      const models = configSource.fetched_anthropic_models || ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
       list.push({ id: 'anthropic', name: 'Anthropic', models, key: 'anthropic_key' });
     }
-    if (ollamaConfig.google_key) {
-      const models = ollamaConfig.fetched_google_models || ['gemini-1.5-pro', 'gemini-1.5-flash'];
+    if (configSource.google_key) {
+      const models = configSource.fetched_google_models || ['gemini-1.5-pro', 'gemini-1.5-flash'];
       list.push({ id: 'google', name: 'Google Gemini', models, key: 'google_key' });
     }
-    if (ollamaConfig.openrouter_key) {
-      const models = ollamaConfig.fetched_openrouter_models || ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct'];
+    if (configSource.openrouter_key) {
+      const models = configSource.fetched_openrouter_models || ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct'];
       list.push({ id: 'openrouter', name: 'OpenRouter', models, key: 'openrouter_key' });
     }
     
@@ -545,55 +558,84 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                 </div>
                 
                 <div className="controls-right">
-                  <div className="model-selector-container">
+                  <div className="dual-selector-wrapper">
+                    {/* Botão Cérebro Mestre */}
                     <div 
-                      className={`model-selector-mini glass ${ollamaConfig.global_ia_enabled ? 'global-mode' : ''}`} 
-                      onClick={() => setShowModelSelector(!showModelSelector)}
-                      title="Clique para trocar o motor de IA"
+                      className={`selector-btn glass ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
+                      onClick={() => {
+                        setSelectorMode('global');
+                        setShowModelSelector(true);
+                      }}
+                      title="IAs do Cérebro Mestre (Global)"
                     >
-                      <span className={`dot-engine ${ollamaConfig.global_ia_enabled ? 'global' : ''}`}></span>
-                      <span>{getCurrentModelDisplay()}</span>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: showModelSelector ? 'rotate(180deg)' : 'none' }}>
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
+                      <span className="icon">🌐</span>
+                      <span className="label">Mestre</span>
+                    </div>
+
+                    {/* Botão Meu Cérebro (Individual) */}
+                    <div 
+                      className={`selector-btn glass ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectorMode('local');
+                        setShowModelSelector(true);
+                      }}
+                      title="Minhas IAs Configuradas"
+                    >
+                      <span className="icon">👤</span>
+                      <span className="label">Pessoal</span>
                     </div>
 
                     {showModelSelector && (
                       <div className="model-dropdown-portal glass fade-in">
-                        {availableProviders.map(p => (
+                        <div className="dropdown-header">
+                          <h3>{selectorMode === 'global' ? '🧠 IAs do Mestre' : '🔑 Minhas Integrações'}</h3>
+                          <button onClick={() => setShowModelSelector(false)}>✕</button>
+                        </div>
+                        
+                        {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig).map(p => (
                           <div key={p.id} className="provider-group">
-                            <label className={(!p.key || ollamaConfig[p.key]) ? '' : 'locked'}>
-                              {p.name} {(!p.key || ollamaConfig[p.key]) ? '' : '🔒'}
+                            <label className={(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : 'locked'}>
+                              {p.name} {(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : '🔒'}
                             </label>
                             <div className="models-list">
-                              {p.models.map(m => (
-                                <button
-                                  key={m}
-                                  className={`model-option ${((p.id === 'ollama' && ollamaConfig.model === m) || 
-                                              (p.id === 'openai' && ollamaConfig.openai_model === m) ||
-                                              (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
-                                              (p.id === 'google' && ollamaConfig.google_model === m) ||
-                                              (p.id === 'openrouter' && ollamaConfig.openrouter_model === m)) && 
-                                              ollamaConfig.active_provider === p.id ? 'active' : ''}`}
-                                  disabled={p.key && !ollamaConfig[p.key]}
-                                  onClick={() => {
-                                    const newConfig = { 
-                                      ...ollamaConfig, 
-                                      active_provider: p.id,
-                                      global_ia_enabled: false 
-                                    };
-                                    if (p.id === 'ollama') newConfig.model = m;
-                                    if (p.id === 'openai') newConfig.openai_model = m;
-                                    if (p.id === 'anthropic') newConfig.anthropic_model = m;
-                                    if (p.id === 'google') newConfig.google_model = m;
-                                    if (p.id === 'openrouter') newConfig.openrouter_model = m;
-                                    setConfig(newConfig);
-                                    setShowModelSelector(false);
-                                  }}
-                                >
-                                  {m.split('-').slice(0, 2).join(' ').toUpperCase()}
-                                </button>
-                              ))}
+                              {p.models.map(m => {
+                                const isActive = selectorMode === 'global' 
+                                  ? (ollamaConfig.global_ia_enabled && ollamaConfig.global_selected_provider === p.id && ollamaConfig.global_selected_model === m)
+                                  : (!ollamaConfig.global_ia_enabled && ollamaConfig.active_provider === p.id && (
+                                      (p.id === 'ollama' && ollamaConfig.model === m) ||
+                                      (p.id === 'openai' && ollamaConfig.openai_model === m) ||
+                                      (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
+                                      (p.id === 'google' && ollamaConfig.google_model === m) ||
+                                      (p.id === 'openrouter' && ollamaConfig.openrouter_model === m)
+                                    ));
+
+                                return (
+                                  <button
+                                    key={m}
+                                    className={`model-option ${isActive ? 'active' : ''}`}
+                                    onClick={() => {
+                                      const newConfig = { ...ollamaConfig };
+                                      if (selectorMode === 'global') {
+                                        newConfig.global_ia_enabled = true;
+                                        newConfig.global_selected_provider = p.id;
+                                        newConfig.global_selected_model = m;
+                                      } else {
+                                        newConfig.global_ia_enabled = false;
+                                        newConfig.active_provider = p.id;
+                                        if (p.id === 'ollama') newConfig.model = m;
+                                        if (p.id === 'openai') newConfig.openai_model = m;
+                                        if (p.id === 'anthropic') newConfig.anthropic_model = m;
+                                        if (p.id === 'google') newConfig.google_model = m;
+                                        if (p.id === 'openrouter') newConfig.openrouter_model = m;
+                                      }
+                                      setConfig(newConfig);
+                                      setShowModelSelector(false);
+                                    }}
+                                  >
+                                    {m.split('-').slice(0, 2).join(' ').toUpperCase()}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         ))}

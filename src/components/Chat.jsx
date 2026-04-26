@@ -503,7 +503,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
     return ollamaConfig.model?.charAt(0).toUpperCase() + ollamaConfig.model?.slice(1);
   };
 
-  const getProvidersForConfig = (configSource) => {
+  const getProvidersForConfig = (configSource, mode = 'local') => {
     if (!configSource) return [];
     
     // Função auxiliar para formatar e limpar nomes de modelos
@@ -517,8 +517,9 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       { id: 'ollama', name: 'Ollama (Local)', models: ['llama3', 'mistral', 'phi3'] },
     ];
     
-    if (configSource.openai_key) {
-      const rawModels = configSource.fetched_openai_models || ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+    const openaiKey = mode === 'global' ? configSource.global_openai_key : configSource.openai_key;
+    if (openaiKey) {
+      const rawModels = (mode === 'global' ? configSource.fetched_global_openai_models : configSource.fetched_openai_models) || ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
       // Deduplicação inteligente
       const seen = new Set();
       const uniqueModels = [];
@@ -529,18 +530,21 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
           uniqueModels.push(m);
         }
       });
-      list.push({ id: 'openai', name: 'OpenAI', models: uniqueModels, key: 'openai_key' });
+      list.push({ id: 'openai', name: 'OpenAI', models: uniqueModels, key: mode === 'global' ? 'global_openai_key' : 'openai_key' });
     }
-    if (configSource.anthropic_key) {
-      const models = configSource.fetched_anthropic_models || ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
-      list.push({ id: 'anthropic', name: 'Anthropic', models, key: 'anthropic_key' });
+    const anthropicKey = mode === 'global' ? configSource.global_anthropic_key : configSource.anthropic_key;
+    if (anthropicKey) {
+      const models = (mode === 'global' ? configSource.fetched_global_anthropic_models : configSource.fetched_anthropic_models) || ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
+      list.push({ id: 'anthropic', name: 'Anthropic', models, key: mode === 'global' ? 'global_anthropic_key' : 'anthropic_key' });
     }
-    if (configSource.google_key) {
-      const models = configSource.fetched_google_models || ['gemini-1.5-pro', 'gemini-1.5-flash'];
-      list.push({ id: 'google', name: 'Google Gemini', models, key: 'google_key' });
+    const googleKey = mode === 'global' ? configSource.global_google_key : configSource.google_key;
+    if (googleKey) {
+      const models = (mode === 'global' ? configSource.fetched_global_google_models : configSource.fetched_google_models) || ['gemini-1.5-pro', 'gemini-1.5-flash'];
+      list.push({ id: 'google', name: 'Google Gemini', models, key: mode === 'global' ? 'global_google_key' : 'google_key' });
     }
-    if (configSource.openrouter_key) {
-      const rawModels = configSource.fetched_openrouter_models || ['meta-llama/llama-3-70b-instruct'];
+    const openrouterKey = mode === 'global' ? configSource.global_openrouter_key : configSource.openrouter_key;
+    if (openrouterKey) {
+      const rawModels = (mode === 'global' ? configSource.fetched_global_openrouter_models : configSource.fetched_openrouter_models) || ['meta-llama/llama-3-70b-instruct'];
       const seen = new Set();
       const uniqueModels = [];
       rawModels.forEach(m => {
@@ -550,7 +554,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
           uniqueModels.push(m);
         }
       });
-      list.push({ id: 'openrouter', name: 'OpenRouter', models: uniqueModels, key: 'openrouter_key' });
+      list.push({ id: 'openrouter', name: 'OpenRouter', models: uniqueModels, key: mode === 'global' ? 'global_openrouter_key' : 'openrouter_key' });
     }
     
     return list;
@@ -780,7 +784,8 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                     <button onClick={() => setShowModelSelector(false)}>✕</button>
                   </div>
                   
-                  {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig).map(p => (
+                                    {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig, selectorMode).map(p => (
+
                     <div key={p.id} className="provider-group">
                       <label className={(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : 'locked'}>
                         {p.name} {(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : '🔒'}
@@ -820,7 +825,8 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                                 setShowModelSelector(false);
                               }}
                             >
-                              {m.split('-').slice(0, 2).join(' ').toUpperCase()}
+                                                             {formatModelName(m)}
+
                             </button>
                           );
                         })}

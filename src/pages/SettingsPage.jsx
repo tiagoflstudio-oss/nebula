@@ -146,7 +146,8 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
               className="glass-input api-key-input"
               value={value || ''} 
               onChange={(e) => {
-                setConfig({...config, [field]: e.target.value});
+                const val = e.target.value;
+                setConfig(prev => ({...prev, [field]: val}));
                 setSyncStatus('idle');
               }}
               placeholder={placeholder || "Inserir API Key..."}
@@ -318,7 +319,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                               .map(m => m.id)
                               .filter(id => id.startsWith('gpt') || id.includes('o1'))
                               .sort();
-                            setConfig({...config, fetched_openai_models: models, openai_key: key});
+                            setConfig(prev => ({...prev, fetched_openai_models: models, openai_key: key}));
                             showToast(`OpenAI ativa! ${models.length} modelos detectados. ✅`, "success");
                             return true;
                           }
@@ -330,7 +331,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         } catch (e) {
                           showToast(`CORS bloqueou fetch direto. Usando lista segura.`, "info");
                           const models = ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
-                          setConfig({...config, fetched_openai_models: models, openai_key: key});
+                          setConfig(prev => ({...prev, fetched_openai_models: models, openai_key: key}));
                           showToast("OpenAI pronta para uso! ✅", "success");
                           return true;
                         }
@@ -345,7 +346,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       setConfig={setConfig}
                       onTest={() => {
                         const models = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'];
-                        setConfig({...config, fetched_anthropic_models: models});
+                        setConfig(prev => ({...prev, fetched_anthropic_models: models}));
                         showToast("Anthropic: 3 modelos sincronizados. ✨", "success");
                         return true;
                       }}
@@ -372,7 +373,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                             const models = data.data
                               .map(m => m.id)
                               .slice(0, 20); // Limita aos top 20 para o UI não explodir
-                            setConfig({...config, fetched_openrouter_models: models, openrouter_key: key});
+                            setConfig(prev => ({...prev, fetched_openrouter_models: models, openrouter_key: key}));
                             showToast(`OpenRouter ativo! ${models.length} modelos detectados. ✅`, "success");
                             return true;
                           } else {
@@ -381,7 +382,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                           }
                         } catch (e) {
                            const models = ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct', 'google/gemini-pro-1.5'];
-                           setConfig({...config, fetched_openrouter_models: models, openrouter_key: key});
+                           setConfig(prev => ({...prev, fetched_openrouter_models: models, openrouter_key: key}));
                            showToast("OpenRouter pronto com lista básica! ✅", "success");
                            return true;
                         }
@@ -396,7 +397,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       setConfig={setConfig}
                       onTest={() => {
                         const models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'];
-                        setConfig({...config, fetched_google_models: models});
+                        setConfig(prev => ({...prev, fetched_google_models: models}));
                         showToast("Google Gemini: Modelos sincronizados. 🚀", "success");
                         return true;
                       }}
@@ -641,7 +642,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         <select 
                           className="glass-input mini-select"
                           value={config.active_provider}
-                          onChange={(e) => setConfig({...config, active_provider: e.target.value})}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setConfig(prev => ({...prev, active_provider: val}));
+                          }}
                         >
                           <option value="ollama">Ollama (Local)</option>
                           <option value="openai">OpenAI (Cloud)</option>
@@ -680,7 +684,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       type="text" 
                       className="glass-input"
                       value={config.ip} 
-                      onChange={(e) => setConfig({...config, ip: e.target.value})}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConfig(prev => ({...prev, ip: val}));
+                      }}
                       placeholder="Ex: 192.168.1.100"
                     />
                   </div>
@@ -694,7 +701,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       type="text" 
                       className="glass-input"
                       value={config.port} 
-                      onChange={(e) => setConfig({...config, port: e.target.value})}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConfig(prev => ({...prev, port: val}));
+                      }}
                       placeholder="11434"
                     />
                   </div>
@@ -707,7 +717,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                     <textarea 
                       className="ssh-key-area"
                       value={config.ssh_key || ''} 
-                      onChange={(e) => setConfig({...config, ssh_key: e.target.value})}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConfig(prev => ({...prev, ssh_key: val}));
+                      }}
                       placeholder="Cole aqui sua chave ssh-ed25519 ou rsa..."
                     />
                   </div>
@@ -721,7 +734,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       <select 
                         className="glass-input"
                         value={config.model} 
-                        onChange={(e) => setConfig({...config, model: e.target.value})}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setConfig(prev => ({...prev, model: val}));
+                        }}
                       >
                         <option value="llama3">Llama 3</option>
                         <option value="qwen">Qwen</option>
@@ -732,7 +748,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       <select 
                         className="glass-input"
                         value={config.openai_model} 
-                        onChange={(e) => setConfig({...config, openai_model: e.target.value})}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setConfig(prev => ({...prev, openai_model: val}));
+                        }}
                       >
                         <option value="gpt-4o">GPT-4o</option>
                         <option value="gpt-4-turbo">GPT-4 Turbo</option>
@@ -742,7 +761,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       <select 
                         className="glass-input"
                         value={config.anthropic_model} 
-                        onChange={(e) => setConfig({...config, anthropic_model: e.target.value})}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setConfig(prev => ({...prev, anthropic_model: val}));
+                        }}
                       >
                         <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
                         <option value="claude-3-opus-20240229">Claude 3 Opus</option>
@@ -752,7 +774,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       <select 
                         className="glass-input"
                         value={config.google_model} 
-                        onChange={(e) => setConfig({...config, google_model: e.target.value})}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setConfig(prev => ({...prev, google_model: val}));
+                        }}
                       >
                         <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                         <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
@@ -812,7 +837,110 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
 
               {activeSection === 'master-os' && <MasterOS />}
 
-              {!['geral', 'conta', 'ia-engine', 'master-os', 'integracoes'].includes(activeSection) && (
+              {activeSection === 'ia-global' && (userRole === 'admin' || userRole === 'vip') && (
+                <div className="settings-group fade-in">
+                  <div className="master-ia-header glass">
+                    <div className="m-icon">🌐</div>
+                    <div className="m-text">
+                      <h3>Cérebro Mestre Global</h3>
+                      <p>Configure as chaves de API que serão compartilhadas com todos os usuários do sistema no modo "Mestre".</p>
+                    </div>
+                  </div>
+                  
+                  <div className="integrations-list mt-6">
+                    <IntegrationRow 
+                      label="OpenAI (Global)" 
+                      description="Chave compartilhada para todos os usuários VIP/Free."
+                      value={config.global_openai_key}
+                      field="global_openai_key"
+                      config={config}
+                      setConfig={setConfig}
+                      onTest={async (key) => {
+                        if (!key) return false;
+                        try {
+                          const res = await fetch('https://api.openai.com/v1/models', {
+                            headers: { 'Authorization': `Bearer ${key}` }
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            const models = data.data
+                              .map(m => m.id)
+                              .filter(id => id.startsWith('gpt') || id.includes('o1'))
+                              .sort();
+                            setConfig(prev => ({...prev, fetched_global_openai_models: models, global_openai_key: key}));
+                            return true;
+                          }
+                          return false;
+                        } catch (e) { 
+                          const models = ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+                          setConfig(prev => ({...prev, fetched_global_openai_models: models, global_openai_key: key}));
+                          return true; 
+                        }
+                      }}
+                    />
+                    <IntegrationRow 
+                      label="Anthropic (Global)" 
+                      description="Claude 3.5 Sonnet global para o sistema."
+                      value={config.global_anthropic_key}
+                      field="global_anthropic_key"
+                      config={config}
+                      setConfig={setConfig}
+                      onTest={() => {
+                        const models = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
+                        setConfig(prev => ({...prev, fetched_global_anthropic_models: models}));
+                        return true;
+                      }}
+                    />
+                    <IntegrationRow 
+                      label="Google Gemini (Global)" 
+                      description="Gemini 1.5 Pro global para o sistema."
+                      value={config.global_google_key}
+                      field="global_google_key"
+                      config={config}
+                      setConfig={setConfig}
+                      onTest={() => {
+                        const models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'];
+                        setConfig(prev => ({...prev, fetched_global_google_models: models}));
+                        return true;
+                      }}
+                    />
+                    <IntegrationRow 
+                      label="OpenRouter (Global)" 
+                      description="Acesso global a modelos open-source."
+                      value={config.global_openrouter_key}
+                      field="global_openrouter_key"
+                      config={config}
+                      setConfig={setConfig}
+                      onTest={async (key) => {
+                        if (!key) return false;
+                        try {
+                          const res = await fetch('https://openrouter.ai/api/v1/models', {
+                            headers: { 'Authorization': `Bearer ${key}` }
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            const models = data.data.map(m => m.id).slice(0, 20);
+                            setConfig(prev => ({...prev, fetched_global_openrouter_models: models, global_openrouter_key: key}));
+                            return true;
+                          }
+                          return false;
+                        } catch (e) { 
+                          const models = ['meta-llama/llama-3-70b-instruct', 'google/gemini-pro-1.5'];
+                          setConfig(prev => ({...prev, fetched_global_openrouter_models: models, global_openrouter_key: key}));
+                          return true; 
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="master-footer-info mt-6 glass">
+                    <span className="material-symbols-outlined">info</span>
+                    <p>Ao salvar estas chaves, elas serão aplicadas automaticamente a todos os chats que utilizam o "Cérebro Mestre".</p>
+                  </div>
+                </div>
+              )}
+
+              {!['geral', 'conta', 'ia-engine', 'master-os', 'integracoes', 'ia-global'].includes(activeSection) && (
                 <div className="settings-placeholder">
                   <p>As configurações de <strong>{activeSection}</strong> estarão disponíveis em breve.</p>
                 </div>

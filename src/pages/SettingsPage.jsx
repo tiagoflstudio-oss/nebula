@@ -320,6 +320,37 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       }}
                     />
                     <IntegrationRow 
+                      label="OpenRouter" 
+                      description="Acesso a centenas de modelos (Llama, Mistral, Qwen)."
+                      value={config.openrouter_key}
+                      field="openrouter_key"
+                      config={config}
+                      setConfig={setConfig}
+                      onTest={async (key) => {
+                        if (!key) return showToast("Insira uma chave primeiro!", "error");
+                        showToast("Sincronizando modelos OpenRouter...", "info");
+                        try {
+                          const res = await fetch('https://openrouter.ai/api/v1/models', {
+                            headers: { 'Authorization': `Bearer ${key}` }
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            const models = data.data
+                              .map(m => m.id)
+                              .slice(0, 20); // Limita aos top 20 para o UI não explodir
+                            setConfig({...config, fetched_openrouter_models: models, openrouter_key: key});
+                            showToast(`OpenRouter ativo! ${models.length} modelos detectados. ✅`, "success");
+                          } else {
+                            showToast("Chave inválida ou erro na API.", "error");
+                          }
+                        } catch (e) {
+                           const models = ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct', 'google/gemini-pro-1.5'];
+                           setConfig({...config, fetched_openrouter_models: models, openrouter_key: key});
+                           showToast("OpenRouter pronto com lista básica! ✅", "success");
+                        }
+                      }}
+                    />
+                    <IntegrationRow 
                       label="Google Cloud" 
                       description="Integração com Gemini Pro e Ultra."
                       value={config.google_key}

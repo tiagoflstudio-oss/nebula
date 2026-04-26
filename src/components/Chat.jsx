@@ -146,6 +146,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
         provider === 'openai' ? ollamaConfig.openai_model :
         provider === 'anthropic' ? ollamaConfig.anthropic_model :
         provider === 'google' ? ollamaConfig.google_model :
+        provider === 'openrouter' ? ollamaConfig.openrouter_model :
         ollamaConfig.model
       );
 
@@ -153,6 +154,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
         provider === 'openai' ? ollamaConfig.openai_key :
         provider === 'anthropic' ? ollamaConfig.anthropic_key :
         provider === 'google' ? ollamaConfig.google_key :
+        provider === 'openrouter' ? ollamaConfig.openrouter_key :
         null
       );
 
@@ -321,6 +323,51 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
           }
         }
       }
+      else if (provider === 'openrouter') {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${activeKey}`,
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Nebula AI'
+          },
+          body: JSON.stringify({
+            model: activeModel,
+            messages: payloadMessages,
+            stream: true
+          })
+        });
+
+        if (!response.ok) {
+           const errorData = await response.json().catch(() => ({}));
+           throw new Error(`OpenRouter Error: ${errorData.error?.message || response.statusText}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+              try {
+                const json = JSON.parse(line.substring(6));
+                const text = json.choices[0]?.delta?.content || '';
+                assistantContent += text;
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1].content = assistantContent;
+                  return newMessages;
+                });
+              } catch (e) {}
+            }
+          }
+        }
+      }
       else {
         const response = await fetch(`http://${ollamaConfig.ip}:${ollamaConfig.port}/api/chat`, {
           method: 'POST',
@@ -449,6 +496,10 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       const models = ollamaConfig.fetched_google_models || ['gemini-1.5-pro', 'gemini-1.5-flash'];
       list.push({ id: 'google', name: 'Google Gemini', models, key: 'google_key' });
     }
+    if (ollamaConfig.openrouter_key) {
+      const models = ollamaConfig.fetched_openrouter_models || ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct'];
+      list.push({ id: 'openrouter', name: 'OpenRouter', models, key: 'openrouter_key' });
+    }
     
     return list;
   };
@@ -521,15 +572,21 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                                   className={`model-option ${((p.id === 'ollama' && ollamaConfig.model === m) || 
                                               (p.id === 'openai' && ollamaConfig.openai_model === m) ||
                                               (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
-                                              (p.id === 'google' && ollamaConfig.google_model === m)) && 
+                                              (p.id === 'google' && ollamaConfig.google_model === m) ||
+                                              (p.id === 'openrouter' && ollamaConfig.openrouter_model === m)) && 
                                               ollamaConfig.active_provider === p.id ? 'active' : ''}`}
                                   disabled={p.key && !ollamaConfig[p.key]}
                                   onClick={() => {
-                                    const newConfig = { ...ollamaConfig, active_provider: p.id, global_ia_enabled: false };
+                                    const newConfig = { 
+                                      ...ollamaConfig, 
+                                      active_provider: p.id,
+                                      global_ia_enabled: false 
+                                    };
                                     if (p.id === 'ollama') newConfig.model = m;
                                     if (p.id === 'openai') newConfig.openai_model = m;
                                     if (p.id === 'anthropic') newConfig.anthropic_model = m;
                                     if (p.id === 'google') newConfig.google_model = m;
+                                    if (p.id === 'openrouter') newConfig.openrouter_model = m;
                                     setConfig(newConfig);
                                     setShowModelSelector(false);
                                   }}

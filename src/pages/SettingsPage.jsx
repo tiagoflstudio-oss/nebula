@@ -303,7 +303,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       config={config}
                       setConfig={setConfig}
                       onTest={async (key) => {
-                        if (!key) return showToast("Insira uma chave primeiro!", "error");
+                        if (!key) {
+                          showToast("Insira uma chave primeiro!", "error");
+                          return false;
+                        }
                         showToast("Sincronizando modelos OpenAI...", "info");
                         try {
                           const res = await fetch('https://api.openai.com/v1/models', {
@@ -317,16 +320,19 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                               .sort();
                             setConfig({...config, fetched_openai_models: models, openai_key: key});
                             showToast(`OpenAI ativa! ${models.length} modelos detectados. ✅`, "success");
+                            return true;
                           }
                           else {
                             const err = await res.json();
                             showToast(`Erro: ${err.error?.message || "Chave Inválida"}`, "error");
+                            return false;
                           }
                         } catch (e) {
                           showToast(`CORS bloqueou fetch direto. Usando lista segura.`, "info");
                           const models = ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
                           setConfig({...config, fetched_openai_models: models, openai_key: key});
                           showToast("OpenAI pronta para uso! ✅", "success");
+                          return true;
                         }
                       }}
                     />
@@ -341,6 +347,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         const models = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'];
                         setConfig({...config, fetched_anthropic_models: models});
                         showToast("Anthropic: 3 modelos sincronizados. ✨", "success");
+                        return true;
                       }}
                     />
                     <IntegrationRow 
@@ -351,7 +358,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       config={config}
                       setConfig={setConfig}
                       onTest={async (key) => {
-                        if (!key) return showToast("Insira uma chave primeiro!", "error");
+                        if (!key) {
+                          showToast("Insira uma chave primeiro!", "error");
+                          return false;
+                        }
                         showToast("Sincronizando modelos OpenRouter...", "info");
                         try {
                           const res = await fetch('https://openrouter.ai/api/v1/models', {
@@ -364,13 +374,16 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                               .slice(0, 20); // Limita aos top 20 para o UI não explodir
                             setConfig({...config, fetched_openrouter_models: models, openrouter_key: key});
                             showToast(`OpenRouter ativo! ${models.length} modelos detectados. ✅`, "success");
+                            return true;
                           } else {
                             showToast("Chave inválida ou erro na API.", "error");
+                            return false;
                           }
                         } catch (e) {
                            const models = ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct', 'google/gemini-pro-1.5'];
                            setConfig({...config, fetched_openrouter_models: models, openrouter_key: key});
                            showToast("OpenRouter pronto com lista básica! ✅", "success");
+                           return true;
                         }
                       }}
                     />
@@ -385,6 +398,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         const models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'];
                         setConfig({...config, fetched_google_models: models});
                         showToast("Google Gemini: Modelos sincronizados. 🚀", "success");
+                        return true;
                       }}
                     />
                     <IntegrationRow 
@@ -394,7 +408,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       field="opencode_key"
                       config={config}
                       setConfig={setConfig}
-                      onTest={() => showToast("Motor de código pronto para uso. 💻", "success")}
+                      onTest={() => {
+                        showToast("Motor de código pronto para uso. 💻", "success");
+                        return true;
+                      }}
                     />
                   </div>
                   

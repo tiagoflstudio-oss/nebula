@@ -2,7 +2,11 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
+<<<<<<< HEAD
 const Navbar = ({ session, onHome, selectedPage, onSelectPage }) => {
+=======
+const Navbar = ({ session }) => {
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
   const location = useLocation();
 
   const handleLogout = async () => {
@@ -11,6 +15,7 @@ const Navbar = ({ session, onHome, selectedPage, onSelectPage }) => {
 
   return (
     <nav className="navbar glass">
+<<<<<<< HEAD
       <div className="nav-brand" onClick={onHome} style={{ cursor: 'pointer' }}>
         Nebula <span>AI</span>
       </div>
@@ -29,6 +34,22 @@ const Navbar = ({ session, onHome, selectedPage, onSelectPage }) => {
               >
                 God Mode
               </button>
+=======
+      <div className="nav-brand">
+        Nebula <span>AI</span>
+      </div>
+      <div className="nav-links">
+        {session && (
+          <>
+            <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
+              Chat
+            </Link>
+            {/* O painel admin só aparece para um e-mail específico por enquanto */}
+            {session.user.email === 'tiagoflstudio@gmail.com' && (
+              <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>
+                Painel Admin
+              </Link>
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
             )}
           </>
         )}

@@ -30,10 +30,17 @@ const Auth = () => {
   };
 
   return (
+<<<<<<< HEAD
     <div className="auth-container glass fade-in">
       <div className="auth-header">
         <h2>Nebula <span>AI</span></h2>
         <p>Acesse seu painel pessoal</p>
+=======
+    <div className="auth-container glass glass-card fade-in">
+      <div className="auth-header">
+        <h2>{isSignUp ? 'Criar Conta' : 'Boas-vindas'}</h2>
+        <p>{isSignUp ? 'Junte-se à inteligência do Nebula' : 'Acesse seu painel pessoal'}</p>
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
       </div>
 
       <form className="auth-form" onSubmit={handleAuth}>
@@ -61,6 +68,7 @@ const Auth = () => {
 
         {error && <div className="auth-error">{error}</div>}
 
+<<<<<<< HEAD
         <button type="submit" className="btn-auth" disabled={loading}>
           {loading ? 'Processando...' : isSignUp ? 'Criar Conta' : 'Entrar'}
         </button>
@@ -72,6 +80,19 @@ const Auth = () => {
           {isSignUp ? 'Faça login' : 'Cadastre-se'}
         </button>
       </p>
+=======
+        <button className="btn-auth" type="submit" disabled={loading}>
+          {loading ? 'Processando...' : isSignUp ? 'Cadastrar' : 'Entrar'}
+        </button>
+      </form>
+
+      <div className="auth-footer">
+        {isSignUp ? 'Já tem uma conta?' : 'Ainda não tem conta?'}
+        <button onClick={() => setIsSignUp(!isSignUp)}>
+          {isSignUp ? 'Faça Login' : 'Cadastre-se'}
+        </button>
+      </div>
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
     </div>
   );
 };

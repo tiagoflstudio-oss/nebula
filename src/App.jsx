@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+<<<<<<< HEAD
 import { supabase } from './lib/supabaseClient';
+=======
+import { supabase } from './lib/supabaseClient.js';
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
 import './App.css';
 import Background from './components/Background.jsx';
 import Chat from './components/Chat.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import Navbar from './components/Navbar.jsx';
+<<<<<<< HEAD
 import Sidebar from './components/Sidebar';
 import Auth from './components/Auth';
 import AdminPage from './pages/AdminPage';
@@ -13,14 +18,22 @@ import SettingsPage from './pages/SettingsPage';
 import ProjectPage from './pages/ProjectPage';
 import OptimizerPage from './pages/OptimizerPage';
 import ProjectsListPage from './pages/ProjectsListPage';
+=======
+import Sidebar from './components/Sidebar.jsx';
+import Auth from './components/Auth.jsx';
+import AdminPage from './pages/AdminPage.jsx';
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
 
 function App() {
   const [session, setSession] = useState(null);
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
+<<<<<<< HEAD
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [selectedPage, setSelectedPage] = useState('home');
+=======
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
   const [config, setConfig] = useState({
     ip: 'localhost',
     port: '11434',
@@ -40,6 +53,7 @@ function App() {
   useEffect(() => {
     if (session) {
       fetchChats();
+<<<<<<< HEAD
       fetchProjects();
     }
   }, [session, selectedProjectId]);
@@ -80,6 +94,22 @@ function App() {
     } catch (error) {
       alert('Dica: Você precisa criar a tabela "projects" no seu Supabase com as colunas: id, user_id, title, created_at.');
       console.error(error);
+=======
+    }
+  }, [session]);
+
+  const fetchChats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chats')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setChats(data || []);
+    } catch (error) {
+      console.error('Erro:', error.message);
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
     }
   };
 
@@ -87,7 +117,11 @@ function App() {
     try {
       const { data, error } = await supabase
         .from('chats')
+<<<<<<< HEAD
         .insert([{ user_id: session.user.id, title: 'Nova Conversa', project_id: selectedProjectId }])
+=======
+        .insert([{ user_id: session.user.id, title: 'Nova Conversa' }])
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
         .select();
       if (error) throw error;
       if (data) {
@@ -108,6 +142,7 @@ function App() {
     } catch (error) {}
   };
 
+<<<<<<< HEAD
   const handleRenameChat = async (id, newTitle) => {
     try {
       const { error } = await supabase
@@ -178,6 +213,8 @@ function App() {
     );
   };
 
+=======
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
   return (
     <Router>
       <div className="app-container">
@@ -186,6 +223,7 @@ function App() {
           <Sidebar 
             session={session}
             chats={chats}
+<<<<<<< HEAD
             projects={projects}
             selectedProjectId={selectedProjectId}
             onSelectProject={(id) => {
@@ -229,11 +267,45 @@ function App() {
               setSelectedPage('home');
             }} 
           />
+=======
+            selectedChatId={selectedChatId}
+            onSelectChat={setSelectedChatId}
+            onNewChat={handleNewChat}
+            onDeleteChat={handleDeleteChat}
+            onRenameChat={()=>{}}
+            onPinChat={()=>{}}
+          />
+        )}
+        <div className="main-wrapper">
+          <Navbar session={session} />
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
           <div className="main-content">
             {!session ? (
               <Auth />
             ) : (
+<<<<<<< HEAD
               renderContent()
+=======
+              <Routes>
+                <Route path="/" element={
+                  <>
+                    <header className="fade-in">
+                      <h1>Nebula <span>AI</span></h1>
+                      <p>Minimalista</p>
+                    </header>
+                    <Chat ollamaConfig={config} chatId={selectedChatId} session={session} />
+                    <AdminPanel config={config} setConfig={setConfig} />
+                  </>
+                } />
+                <Route path="/admin" element={
+                  session.user.email === 'tiagoflstudio@gmail.com' ? (
+                    <AdminPage config={config} />
+                  ) : (
+                    <div>Acesso Negado</div>
+                  )
+                } />
+              </Routes>
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
             )}
           </div>
         </div>

@@ -12,10 +12,12 @@ Nebula AI é uma interface web minimalista projetada para se conectar a instânc
 ## 🚀 Funcionalidades
 
 - [x] Inicialização do Projeto.
-- [ ] Chat Minimalista em Tempo Real.
-- [ ] Integração Direta com API Ollama (Remota/Local).
-- [ ] Suporte a Streaming de Respostas.
-- [ ] Painel de Admin para Configuração de Endpoints.
+- [x] Chat Minimalista em Tempo Real.
+- [x] Integração Direta com API Ollama (Remota/Local).
+- [x] Suporte a Streaming de Respostas.
+- [x] Painel Admin (God Mode) para Configuração.
+- [x] Galeria de Projetos (Hub de Clientes).
+- [x] Otimizador (Performance Gamer).
 
 ## 🛠️ Tecnologias
 

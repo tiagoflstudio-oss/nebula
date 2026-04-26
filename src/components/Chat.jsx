@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+<<<<<<< HEAD
 const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
+=======
+const Chat = ({ ollamaConfig, chatId, session }) => {
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Olá! Sou o Nebula AI. Como posso ajudar você hoje?' }
   ]);
@@ -72,7 +76,12 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
           .select();
         if (error) throw error;
         currentChatId = data[0].id;
+<<<<<<< HEAD
         if (onChatCreated) onChatCreated(currentChatId);
+=======
+        // O App.jsx vai receber esse ID via trigger ou podemos lidar aqui
+        // Mas para simplicidade, vamos assumir que o usuário deve clicar em "Nova Conversa" primeiro ou fazemos o redirect
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
       } catch (error) {
         console.error('Erro ao criar chat automático:', error.message);
         return;
@@ -145,6 +154,7 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
     }
   };
 
+<<<<<<< HEAD
   const renderContent = (content) => {
     const parts = content.split(/(```[\s\S]*?```)/g);
     return parts.map((part, idx) => {
@@ -171,22 +181,34 @@ const Chat = ({ ollamaConfig, chatId, session, onChatCreated }) => {
     });
   };
 
+=======
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
   return (
     <div className="chat-container fade-in">
       <div className="chat-messages" ref={scrollRef}>
         {messages.map((msg, idx) => (
           <div key={idx} className={`message-wrapper ${msg.role}`}>
+<<<<<<< HEAD
             <div className={`message ${msg.role} ${msg.role === 'user' ? 'glass' : ''}`}>
               {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
+=======
+            <div className={`message glass ${msg.role}`}>
+              {msg.content}
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
             </div>
           </div>
         ))}
         {loading && messages[messages.length-1].role === 'user' && (
           <div className="message-wrapper assistant">
+<<<<<<< HEAD
             <div className="message assistant loading">
               <div className="typing-dot"></div>
               <div className="typing-dot"></div>
               <div className="typing-dot"></div>
+=======
+            <div className="message glass assistant loading">
+              <span>●</span><span>●</span><span>●</span>
+>>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
             </div>
           </div>
         )}

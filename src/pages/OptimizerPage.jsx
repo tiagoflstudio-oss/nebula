@@ -19,18 +19,17 @@ const OptimizerPage = () => {
         const data = await response.json();
         setStats({
           ping: data.latency.ping,
-          cpu: data.cpu.usage,
-          ram: data.ram.used,
+          cpu: data.cpu, // Agora recebe o objeto completo {usage, cores, speed, model}
+          ram: data.ram.free,
           connected: true
         });
       } catch (error) {
         setStats(prev => ({ ...prev, connected: false }));
-        // Fallback para simulação se o bridge não estiver rodando (opcional)
       }
     };
 
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 2000);
+    const interval = setInterval(fetchMetrics, 500); // 500ms para maior precisão
     return () => clearInterval(interval);
   }, []);
 
@@ -93,13 +92,18 @@ const OptimizerPage = () => {
           <div className="stat-footer positive">Internet Estável</div>
         </div>
 
-        <div className={`premium-stat-card glass ${stats.cpu > 80 ? 'warning' : ''}`}>
+        <div className={`premium-stat-card glass ${stats.cpu?.usage > 80 ? 'warning' : ''}`}>
           <div className="stat-icon">⚡</div>
           <div className="stat-info">
             <span className="label">Uso de CPU</span>
             <span className={`value ${optimizing ? 'pulse-text' : ''}`}>
-              {stats.connected ? `${stats.cpu}%` : '--'}
+              {stats.connected ? `${stats.cpu?.usage}%` : '--'}
             </span>
+            {stats.connected && (
+              <span className="sub-value">
+                {stats.cpu?.speed} GHz | {stats.cpu?.cores} Cores
+              </span>
+            )}
           </div>
           <div className="stat-footer">Carga Dinâmica</div>
         </div>

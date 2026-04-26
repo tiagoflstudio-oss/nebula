@@ -316,16 +316,23 @@ function App() {
       type: 'confirm',
       onConfirm: async () => {
         try {
+          console.log(`🔥 Nebula: Executando DELETE em cascata para chats do projeto: ${id}`);
+          await supabase.from('chats').delete().eq('project_id', id);
+
           console.log(`🔥 Nebula: Executando DELETE no Supabase para ID: ${id}`);
           const { error } = await supabase.from('projects').delete().eq('id', id);
           if (error) throw error;
           
           console.log(`✅ Nebula: Projeto ${id} excluído com sucesso.`);
+          
+          // Atualização otimista da UI
+          setProjects(prev => prev.filter(p => p.id !== id));
+          
           if (selectedProjectId === id) setSelectedProjectId(null);
-          fetchProjects();
           setModalConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
           console.error('❌ Nebula: Erro ao excluir projeto:', error.message);
+          alert('Erro ao excluir projeto: ' + error.message);
         }
       }
     });

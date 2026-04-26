@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import './ProjectPage.css';
 
 const ProjectPage = ({ projectId, onSelectChat }) => {
   const [project, setProject] = useState(null);

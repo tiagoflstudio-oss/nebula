@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import React, { useState } from 'react';
 
 const Sidebar = ({ 
   onSelectChat, 
   selectedChatId, 
   onNewChat, 
-<<<<<<< HEAD
   chats,
   projects,
   selectedProjectId,
@@ -13,34 +11,18 @@ const Sidebar = ({
   onCreateProject,
   selectedPage,
   onSelectPage,
-=======
-  session, 
-  chats,
->>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
   onDeleteChat,
   onRenameChat,
   onPinChat
 }) => {
-<<<<<<< HEAD
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredChats = chats?.filter(chat => 
     chat.title.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-=======
->>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
-  const handleRename = (e, id, currentTitle) => {
-    e.stopPropagation();
-    const newTitle = prompt('Novo título da conversa:', currentTitle);
-    if (newTitle && newTitle !== currentTitle) {
-      onRenameChat(id, newTitle);
-    }
-  };
-
   return (
     <aside className="sidebar glass">
-<<<<<<< HEAD
       <div className="sidebar-header" onClick={() => {
         onSelectPage('home');
         onSelectProject(null);
@@ -72,7 +54,11 @@ const Sidebar = ({
         </div>
 
         <nav className="sidebar-main-nav">
-          <button className={`nav-item ${!selectedProjectId ? 'active' : ''}`} onClick={() => onSelectProject(null)}>
+          <button className={`nav-item ${!selectedProjectId && selectedPage === 'home' && !selectedChatId ? 'active' : ''}`} onClick={() => {
+            onSelectProject(null);
+            onSelectChat(null);
+            onSelectPage('home');
+          }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
@@ -107,21 +93,6 @@ const Sidebar = ({
           <div className="sidebar-empty">Nada encontrado.</div>
         ) : (
           filteredChats.map((chat) => (
-=======
-      <button className="btn-new-chat" onClick={onNewChat}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        Nova Conversa
-      </button>
-
-      <div className="sidebar-history">
-        <p className="sidebar-label">Histórico</p>
-        {!chats || chats.length === 0 ? (
-          <div className="sidebar-empty">Nenhuma conversa ainda.</div>
-        ) : (
-          chats.map((chat) => (
->>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
             <div
               key={chat.id}
               className={`sidebar-item ${selectedChatId === chat.id ? 'active' : ''} ${chat.is_pinned ? 'pinned' : ''}`}
@@ -141,7 +112,7 @@ const Sidebar = ({
                     <path d="M12 2v8m0 0l-4 4m4-4l4 4m-4-12v12" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
-                <button onClick={(e) => handleRename(e, chat.id, chat.title)} title="Renomear">
+                <button onClick={(e) => { e.stopPropagation(); onRenameChat(chat.id, chat.title); }} title="Renomear">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
@@ -156,7 +127,6 @@ const Sidebar = ({
           ))
         )}
       </div>
-<<<<<<< HEAD
 
       <div className="sidebar-footer">
         <button className="btn-all-chats">
@@ -181,8 +151,6 @@ const Sidebar = ({
           </div>
         </div>
       </div>
-=======
->>>>>>> a9f69f60651e849b991e733636d692f1d68c0024
     </aside>
   );
 };

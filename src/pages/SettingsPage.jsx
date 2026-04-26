@@ -105,42 +105,53 @@ const SettingsPage = ({ config, setConfig, userRole, session }) => {
 
               {activeSection === 'integracoes' && (
                 <div className="settings-group fade-in">
-                  <IntegrationRow 
-                    label="OpenAI" 
-                    description="Para GPT-4o, GPT-3.5 Turbo e DALL-E."
-                    value={config.openai_key}
-                    field="openai_key"
-                  />
-                  <IntegrationRow 
-                    label="Anthropic" 
-                    description="Para modelos Claude 3.5 Sonnet e Opus."
-                    value={config.anthropic_key}
-                    field="anthropic_key"
-                  />
-                  <IntegrationRow 
-                    label="Google Cloud" 
-                    description="Integração com Gemini Pro e Ultra."
-                    value={config.google_key}
-                    field="google_key"
-                  />
-                  <IntegrationRow 
-                    label="OpenCode" 
-                    description="Motor especializado em programação."
-                    value={config.opencode_key}
-                    field="opencode_key"
-                  />
+                  <div className="integrations-list">
+                    <IntegrationRow 
+                      label="OpenAI" 
+                      description="Para GPT-4o, GPT-3.5 Turbo e DALL-E."
+                      value={config.openai_key}
+                      field="openai_key"
+                    />
+                    <IntegrationRow 
+                      label="Anthropic" 
+                      description="Para modelos Claude 3.5 Sonnet e Opus."
+                      value={config.anthropic_key}
+                      field="anthropic_key"
+                    />
+                    <IntegrationRow 
+                      label="Google Cloud" 
+                      description="Integração com Gemini Pro e Ultra."
+                      value={config.google_key}
+                      field="google_key"
+                    />
+                    <IntegrationRow 
+                      label="OpenCode" 
+                      description="Motor especializado em programação."
+                      value={config.opencode_key}
+                      field="opencode_key"
+                    />
+                  </div>
                   
                   <div className="settings-footer">
                     <button 
-                      className="btn-primary sync-btn"
+                      className="sync-btn"
                       onClick={() => {
-                        // Feedback visual de salvamento
                         const btn = document.querySelector('.sync-btn');
-                        btn.innerHTML = 'Sincronizando...';
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '<span class="loading-spinner"></span> Sincronizando...';
+                        btn.style.opacity = '0.7';
+                        btn.disabled = true;
+                        
                         setTimeout(() => {
                           btn.innerHTML = 'Configurações Salvas! ✨';
-                          setTimeout(() => btn.innerHTML = 'Sincronizar Integrações', 2000);
-                        }, 1000);
+                          btn.style.background = '#10b981';
+                          btn.disabled = false;
+                          btn.style.opacity = '1';
+                          setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.style.background = '';
+                          }, 2000);
+                        }, 1500);
                       }}
                     >
                       Sincronizar Integrações
@@ -151,10 +162,20 @@ const SettingsPage = ({ config, setConfig, userRole, session }) => {
 
               {activeSection === 'ia-engine' && (
                 <div className="settings-group fade-in">
+                  <div className="engine-header">
+                    <p className="engine-status">
+                      Status do Motor: 
+                      <span className="status-indicator">
+                        <span className="status-dot offline"></span>
+                        Desconectado
+                      </span>
+                    </p>
+                  </div>
+
                   <div className="setting-row">
                     <div className="setting-info">
                       <h3>IP do Servidor Ollama</h3>
-                      <p>IP da máquina onde a LLM está rodando.</p>
+                      <p>IP da máquina (PC Remoto) onde a LLM está rodando.</p>
                     </div>
                     <input 
                       type="text" 
@@ -193,6 +214,36 @@ const SettingsPage = ({ config, setConfig, userRole, session }) => {
                       <option value="mistral">Mistral</option>
                       <option value="phi3">Phi-3</option>
                     </select>
+                  </div>
+
+                  <div className="engine-actions">
+                    <button 
+                      className="test-conn-btn"
+                      onClick={async () => {
+                        const dot = document.querySelector('.status-dot');
+                        const text = document.querySelector('.status-indicator');
+                        const btn = document.querySelector('.test-conn-btn');
+                        
+                        btn.innerHTML = 'Testando...';
+                        try {
+                          const response = await fetch(`http://${config.ip}:${config.port}/api/tags`);
+                          if (response.ok) {
+                            dot.className = 'status-dot online';
+                            text.lastChild.textContent = ' Conectado';
+                            btn.innerHTML = 'Conexão Estabelecida! ✅';
+                          } else {
+                            throw new Error();
+                          }
+                        } catch (e) {
+                          dot.className = 'status-dot offline';
+                          text.lastChild.textContent = ' Erro de Conexão';
+                          btn.innerHTML = 'Falha ao Conectar ❌';
+                        }
+                        setTimeout(() => btn.innerHTML = 'Testar Conexão', 3000);
+                      }}
+                    >
+                      Testar Conexão
+                    </button>
                   </div>
                 </div>
               )}

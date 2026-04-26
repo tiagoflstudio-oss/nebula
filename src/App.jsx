@@ -51,6 +51,24 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Carregar configurações do LocalStorage ao iniciar
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('nebula_config');
+    if (savedConfig) {
+      try {
+        setConfig(JSON.parse(savedConfig));
+        console.log("✅ Nebula Engine: Configurações carregadas do LocalStorage");
+      } catch (e) {
+        console.error("❌ Erro ao carregar configurações salvas");
+      }
+    }
+  }, []);
+
+  // Salvar configurações sempre que houver alteração
+  useEffect(() => {
+    localStorage.setItem('nebula_config', JSON.stringify(config));
+  }, [config]);
+
   useEffect(() => {
     if (session) {
       fetchProfile();
@@ -199,6 +217,7 @@ function App() {
   };
 
   const handleDeleteProject = (id, title) => {
+    console.log(`🗑️ Nebula: Solicitando exclusão do projeto: ${title} (${id})`);
     setModalConfig({
       isOpen: true,
       title: 'Excluir Projeto',
@@ -206,13 +225,16 @@ function App() {
       type: 'confirm',
       onConfirm: async () => {
         try {
+          console.log(`🔥 Nebula: Executando DELETE no Supabase para ID: ${id}`);
           const { error } = await supabase.from('projects').delete().eq('id', id);
           if (error) throw error;
+          
+          console.log(`✅ Nebula: Projeto ${id} excluído com sucesso.`);
           if (selectedProjectId === id) setSelectedProjectId(null);
           fetchProjects();
           setModalConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
-          console.error('Erro ao excluir projeto:', error.message);
+          console.error('❌ Nebula: Erro ao excluir projeto:', error.message);
         }
       }
     });
@@ -276,6 +298,7 @@ function App() {
         {session && (
           <Sidebar 
             session={session}
+            userRole={userRole}
             chats={chats}
             projects={projects}
             selectedProjectId={selectedProjectId}

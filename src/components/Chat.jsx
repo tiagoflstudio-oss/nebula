@@ -517,7 +517,6 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
     return list;
   };
 
-  const availableProviders = getAvailableProviders();
 
   return (
     <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
@@ -710,50 +709,87 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                 </svg>
               </button>
             </div>
-            <div className="model-selector-container mini-bottom">
-               <div 
-                  className={`model-selector-mini glass ${ollamaConfig.global_ia_enabled ? 'global-locked' : ''}`} 
-                  onClick={() => !ollamaConfig.global_ia_enabled && setShowModelSelector(!showModelSelector)}
-                  title={ollamaConfig.global_ia_enabled ? "Modo Global Ativo" : "Trocar motor"}
-                >
-                  <span className="dot-engine"></span>
-                  <span>{getCurrentModelDisplay()}</span>
-                </div>
-                {showModelSelector && (
-                  <div className="model-dropdown-portal glass bottom-mode fade-in">
-                     {availableProviders.map(p => (
-                          <div key={p.id} className="provider-group">
-                            <label className={(!p.key || ollamaConfig[p.key]) ? '' : 'locked'}>
-                              {p.name} {(!p.key || ollamaConfig[p.key]) ? '' : '🔒'}
-                            </label>
-                            <div className="models-list">
-                              {p.models.map(m => (
-                                <button
-                                  key={m}
-                                  className={`model-option ${((p.id === 'ollama' && ollamaConfig.model === m) || 
-                                              (p.id === 'openai' && ollamaConfig.openai_model === m) ||
-                                              (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
-                                              (p.id === 'google' && ollamaConfig.google_model === m)) && 
-                                              ollamaConfig.active_provider === p.id ? 'active' : ''}`}
-                                  disabled={p.key && !ollamaConfig[p.key]}
-                                  onClick={() => {
-                                    const newConfig = { ...ollamaConfig, active_provider: p.id };
-                                    if (p.id === 'ollama') newConfig.model = m;
-                                    if (p.id === 'openai') newConfig.openai_model = m;
-                                    if (p.id === 'anthropic') newConfig.anthropic_model = m;
-                                    if (p.id === 'google') newConfig.google_model = m;
-                                    setConfig(newConfig);
-                                    setShowModelSelector(false);
-                                  }}
-                                >
-                                  {m.split('-').slice(0, 2).join(' ').toUpperCase()}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+            <div className="dual-selector-wrapper mini-bottom">
+              {/* Botão Cérebro Mestre */}
+              <div 
+                className={`selector-btn glass mini ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
+                onClick={() => {
+                  setSelectorMode('global');
+                  setShowModelSelector(true);
+                }}
+                title="IAs do Mestre"
+              >
+                <span className="icon">🌐</span>
+              </div>
+
+              {/* Botão Pessoal */}
+              <div 
+                className={`selector-btn glass mini ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectorMode('local');
+                  setShowModelSelector(true);
+                }}
+                title="Minhas IAs"
+              >
+                <span className="icon">👤</span>
+              </div>
+
+              {showModelSelector && (
+                <div className="model-dropdown-portal glass bottom-mode fade-in">
+                  <div className="dropdown-header">
+                    <h3>{selectorMode === 'global' ? '🧠 IAs do Mestre' : '🔑 Minhas Integrações'}</h3>
+                    <button onClick={() => setShowModelSelector(false)}>✕</button>
                   </div>
-                )}
+                  
+                  {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig).map(p => (
+                    <div key={p.id} className="provider-group">
+                      <label className={(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : 'locked'}>
+                        {p.name} {(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : '🔒'}
+                      </label>
+                      <div className="models-list">
+                        {p.models.map(m => {
+                          const isActive = selectorMode === 'global' 
+                            ? (ollamaConfig.global_ia_enabled && ollamaConfig.global_selected_provider === p.id && ollamaConfig.global_selected_model === m)
+                            : (!ollamaConfig.global_ia_enabled && ollamaConfig.active_provider === p.id && (
+                                (p.id === 'ollama' && ollamaConfig.model === m) ||
+                                (p.id === 'openai' && ollamaConfig.openai_model === m) ||
+                                (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
+                                (p.id === 'google' && ollamaConfig.google_model === m) ||
+                                (p.id === 'openrouter' && ollamaConfig.openrouter_model === m)
+                              ));
+
+                          return (
+                            <button
+                              key={m}
+                              className={`model-option ${isActive ? 'active' : ''}`}
+                              onClick={() => {
+                                const newConfig = { ...ollamaConfig };
+                                if (selectorMode === 'global') {
+                                  newConfig.global_ia_enabled = true;
+                                  newConfig.global_selected_provider = p.id;
+                                  newConfig.global_selected_model = m;
+                                } else {
+                                  newConfig.global_ia_enabled = false;
+                                  newConfig.active_provider = p.id;
+                                  if (p.id === 'ollama') newConfig.model = m;
+                                  if (p.id === 'openai') newConfig.openai_model = m;
+                                  if (p.id === 'anthropic') newConfig.anthropic_model = m;
+                                  if (p.id === 'google') newConfig.google_model = m;
+                                  if (p.id === 'openrouter') newConfig.openrouter_model = m;
+                                }
+                                setConfig(newConfig);
+                                setShowModelSelector(false);
+                              }}
+                            >
+                              {m.split('-').slice(0, 2).join(' ').toUpperCase()}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <button className="send-btn-circle" onClick={handleSend} disabled={loading}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

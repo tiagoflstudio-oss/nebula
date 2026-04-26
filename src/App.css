@@ -3519,3 +3519,24 @@ select.glass-input:focus, select.mini-select:focus {
   box-shadow: 0 20px 40px rgba(0,0,0,0.4);
 }
 
+.selector-btn.mini {
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.selector-btn.mini .label {
+  display: none;
+}
+
+.dual-selector-wrapper.mini-bottom {
+  margin-right: 10px;
+}
+
+.model-dropdown-portal.bottom-mode {
+  bottom: calc(100% + 15px);
+  right: -50px;
+}
+

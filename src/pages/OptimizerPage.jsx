@@ -1,177 +1,138 @@
 import React, { useState } from 'react';
+import './OptimizerPage.css';
 
 const OptimizerPage = () => {
   const [optimizing, setOptimizing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState([]);
-  const [stats, setStats] = useState({
-    ping: 0,
-    cpu: 0,
-    ram: 0,
-    connected: false
-  });
-
-  // Buscar métricas reais do Nebula Bridge
-  React.useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/metrics');
-        const data = await response.json();
-        setStats({
-          ping: data.latency.ping,
-          cpu: data.cpu, // Agora recebe o objeto completo {usage, cores, speed, model}
-          ram: data.ram.free,
-          connected: true
-        });
-      } catch (error) {
-        setStats(prev => ({ ...prev, connected: false }));
-      }
-    };
-
-    fetchMetrics();
-    const interval = setInterval(fetchMetrics, 500); // 500ms para maior precisão
-    return () => clearInterval(interval);
-  }, []);
+  const [activeTask, setActiveTask] = useState(null);
 
   const addLog = (msg) => {
-    setLogs(prev => [msg, ...prev].slice(0, 5));
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setLogs(prev => [`[${time}] ${msg}`, ...prev].slice(0, 50));
   };
 
-  const startOptimization = () => {
+  const runOptimization = (taskName, icon) => {
+    if (optimizing) return;
     setOptimizing(true);
-    setLogs([]);
-    let p = 0;
-    
-    const commands = [
-      "ipconfig /flushdns",
-      "EmptyStandbyList.exe standby",
-      "powercfg /setactive SCHEME_MIN",
-      "netsh int tcp set global autotuninglevel=normal",
-      "Cleaning Temp files...",
-      "Optimizing CPU affinity...",
-      "System Overclock verified."
+    setActiveTask(taskName);
+    setProgress(0);
+    addLog(`INICIANDO PROTOCOLO: ${taskName.toUpperCase()}...`);
+
+    const steps = [
+      `Sincronizando com núcleo de processamento...`,
+      `Mapeando clusters de ${taskName.toLowerCase()}...`,
+      "Executando rotinas de purging e limpeza...",
+      "Otimizando alocação de buffers de sistema",
+      "Validando integridade dos novos parâmetros",
+      `${taskName} concluído com sucesso.`
     ];
 
+    let stepIdx = 0;
     const interval = setInterval(() => {
-      p += 2;
-      setProgress(p);
-      
-      if (p % 12 === 0) {
-        addLog(`> Executing: ${commands[Math.floor(p / 12) % commands.length]}`);
-      }
-
-      if (p >= 100) {
-        clearInterval(interval);
-        setOptimizing(false);
-        addLog("✨ Optimization Complete. Peak Performance Active.");
-      }
-    }, 80);
+      setProgress(prev => {
+        const next = prev + 4;
+        if (next % 20 === 0 && stepIdx < steps.length) {
+          addLog(`> ${steps[stepIdx]}`);
+          stepIdx++;
+        }
+        if (next >= 100) {
+          clearInterval(interval);
+          setOptimizing(false);
+          setActiveTask(null);
+          addLog(`✨ SISTEMA: ${taskName.toUpperCase()} FINALIZADO.`);
+          return 100;
+        }
+        return next;
+      });
+    }, 60);
   };
 
   return (
     <div className="page-container optimizer-page fade-in">
       <div className="page-header compact-header">
         <div className="header-title-row">
-          <h1>Nebula <span>Optimizer</span></h1>
-          <div className={`status-badge-premium ${stats.connected ? 'online' : 'offline'}`}>
+          <h1>Nebula <span>System Master</span></h1>
+          <div className="status-badge-premium online">
             <span className="dot"></span>
-            {stats.connected ? 'Bridge Ativo' : 'Bridge Desconectado'}
+            Núcleo de Performance Ativo
           </div>
         </div>
       </div>
 
-      <div className="optimizer-stats-grid">
-        <div className="premium-stat-card glass">
-          <div className="stat-icon">📡</div>
-          <div className="stat-info">
-            <span className="label">Latência (Ping)</span>
-            <span className={`value ${optimizing ? 'pulse-text' : ''}`}>
-              {stats.connected ? `${stats.ping}ms` : '--'}
-            </span>
+      <div className="optimizer-actions-grid">
+        <div className={`action-card glass ${activeTask === 'Limpeza de Cache' ? 'active' : ''}`} 
+             onClick={() => runOptimization('Limpeza de Cache', '🧹')}>
+          <div className="action-icon">🧹</div>
+          <div className="action-info">
+            <h3>Cache Purge</h3>
+            <p>Limpa buffers e temporários do navegador.</p>
           </div>
-          <div className="stat-footer positive">Internet Estável</div>
+          <button className="run-btn">Executar</button>
         </div>
 
-        <div className={`premium-stat-card glass ${stats.cpu?.usage > 80 ? 'warning' : ''}`}>
-          <div className="stat-icon">⚡</div>
-          <div className="stat-info">
-            <span className="label">Uso de CPU</span>
-            <span className={`value ${optimizing ? 'pulse-text' : ''}`}>
-              {stats.connected ? `${stats.cpu?.usage}%` : '--'}
-            </span>
-            {stats.connected && (
-              <span className="sub-value">
-                {stats.cpu?.speed} GHz | {stats.cpu?.cores} Cores
-              </span>
-            )}
+        <div className={`action-card glass ${activeTask === 'Turbo Network' ? 'active' : ''}`}
+             onClick={() => runOptimization('Turbo Network', '🚀')}>
+          <div className="action-icon">🚀</div>
+          <div className="action-info">
+            <h3>Network Boost</h3>
+            <p>Flush DNS e otimização de latência TCP.</p>
           </div>
-          <div className="stat-footer">Carga Dinâmica</div>
+          <button className="run-btn">Executar</button>
         </div>
 
-        <div className="premium-stat-card glass">
-          <div className="stat-icon">🧠</div>
-          <div className="stat-info">
-            <span className="label">RAM Livre</span>
-            <span className={`value ${optimizing ? 'pulse-text' : ''}`}>
-              {stats.connected ? `${stats.ram} GB` : '--'}
-            </span>
+        <div className={`action-card glass ${activeTask === 'Prioridade CPU' ? 'active' : ''}`}
+             onClick={() => runOptimization('Prioridade CPU', '🧠')}>
+          <div className="action-icon">🧠</div>
+          <div className="action-info">
+            <h3>CPU Focus</h3>
+            <p>Prioriza processos Nebula no kernel.</p>
           </div>
-          <div className="stat-footer positive">Memória Volátil</div>
+          <button className="run-btn">Executar</button>
+        </div>
+
+        <div className={`action-card glass ${activeTask === 'Escaneamento Profundo' ? 'active' : ''}`}
+             onClick={() => runOptimization('Escaneamento Profundo', '🛡️')}>
+          <div className="action-icon">🛡️</div>
+          <div className="action-info">
+            <h3>Deep Scan</h3>
+            <p>Busca e encerra processos zumbis inúteis.</p>
+          </div>
+          <button className="run-btn">Executar</button>
         </div>
       </div>
 
-      <div className="optimizer-dashboard">
-        <div className="optimizer-console-container glass">
-          <div className="console-header">
-            <span className="title">Terminal de Diagnóstico</span>
-            <div className={`scan-line ${optimizing ? 'active' : ''}`}></div>
+      <div className="diagnostic-terminal glass">
+        <div className="terminal-header">
+          <div className="terminal-dots">
+            <span></span><span></span><span></span>
           </div>
-          <div className="optimizer-console-content">
-            {!stats.connected && <div className="line warning">⚠️ Alerta: Inicie o 'node nebula-bridge.js' para sincronizar hardware.</div>}
-            {logs.length === 0 && stats.connected && <span className="placeholder">Pronto para otimização...</span>}
-            {logs.map((log, i) => (
-              <div key={i} className="line">{log}</div>
-            ))}
-          </div>
-          <button 
-            className={`btn-premium-optimize ${optimizing ? 'active' : ''}`} 
-            onClick={startOptimization}
-            disabled={optimizing || !stats.connected}
-          >
-            {optimizing ? (
-              <div className="progress-container">
-                <div className="progress-bar" style={{ width: `${progress}%` }}></div>
-                <span className="progress-text">{progress}% Otimizando...</span>
+          <div className="terminal-title">NEBULA DIAGNOSTIC TERMINAL v2.0</div>
+          {optimizing && <div className="terminal-spinner"></div>}
+        </div>
+        
+        <div className="terminal-content">
+          {logs.length === 0 ? (
+            <div className="terminal-empty">
+              <span className="cursor-blink">_</span> Aguardando comando de otimização...
+            </div>
+          ) : (
+            logs.map((log, idx) => (
+              <div key={idx} className={`terminal-line ${log.includes('✨') ? 'highlight' : ''}`}>
+                <span className="line-prefix">nebula:~$</span> {log}
               </div>
-            ) : (
-              <><span className="btn-icon">🚀</span> Otimizar Sistema Agora</>
-            )}
-          </button>
+            ))
+          )}
         </div>
 
-        <div className="optimizer-features-column">
-          <div className="premium-feature-item glass">
-            <div className="f-icon">🧹</div>
-            <div className="f-content">
-              <h4>Limpeza de Cache</h4>
-              <p>Elimina buffers e arquivos temporários.</p>
+        {optimizing && (
+          <div className="terminal-progress-container">
+            <div className="progress-label">Otimizando {activeTask}: {progress}%</div>
+            <div className="progress-bar-bg">
+              <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
             </div>
           </div>
-          <div className="premium-feature-item glass">
-            <div className="f-icon">🌐</div>
-            <div className="f-content">
-              <h4>Network Boost</h4>
-              <p>Reduz o jitter e estabiliza rotas.</p>
-            </div>
-          </div>
-          <div className="premium-feature-item glass">
-            <div className="f-icon">🎯</div>
-            <div className="f-content">
-              <h4>Prioridade CPU</h4>
-              <p>Foca hardware na tarefa ativa.</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

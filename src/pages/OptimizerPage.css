@@ -1,0 +1,221 @@
+.optimizer-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header Compacto */
+.compact-header {
+  margin-bottom: 25px;
+}
+
+.header-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title-row h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.header-title-row h1 span {
+  color: var(--nebula-primary);
+  font-weight: 800;
+}
+
+/* Grid de Ações */
+.optimizer-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-5px);
+  border-color: var(--nebula-primary);
+}
+
+.action-card.active {
+  border-color: var(--nebula-primary);
+  background: rgba(0, 243, 255, 0.05);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+}
+
+.action-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.action-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.action-info p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.run-btn {
+  margin-top: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 15px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.action-card:hover .run-btn {
+  background: var(--nebula-primary);
+  color: #000;
+}
+
+/* Terminal de Diagnóstico */
+.diagnostic-terminal {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+  position: relative;
+}
+
+.terminal-header {
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.terminal-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+}
+
+.terminal-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.terminal-empty {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+.terminal-line {
+  margin-bottom: 8px;
+  animation: slideIn 0.2s ease-out;
+}
+
+.line-prefix {
+  color: var(--nebula-primary);
+  margin-right: 10px;
+}
+
+.terminal-line.highlight {
+  color: #10b981;
+  font-weight: 700;
+}
+
+/* Progresso no Terminal */
+.terminal-progress-container {
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progress-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.progress-bar-bg {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--nebula-primary);
+  box-shadow: 0 0 10px var(--nebula-primary);
+  transition: width 0.1s ease;
+}
+
+.terminal-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 243, 255, 0.2);
+  border-top-color: var(--nebula-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-left: auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}

@@ -107,6 +107,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
       { id: 'master-os', label: 'Master OS', icon: '🖥️' }
     ] : []),
     { id: 'integracoes', label: 'Integrações', icon: '🔌' },
+    { id: 'ia-global', label: 'IA Global (Mestre)', icon: '🌐' },
     { id: 'conexoes', label: 'Conexões de API', icon: '🔗' },
     { id: 'nebula-code', label: 'Nebula Code', icon: '💻' },
   ];
@@ -344,6 +345,158 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                   </div>
                 </div>
               )}
+              {activeSection === 'ia-global' && (
+                <div className="settings-group fade-in">
+                  <div className="global-ia-hero glass">
+                    <div className="global-ia-icon">🌐</div>
+                    <div className="global-ia-status">
+                      <h3>Cérebro Mestre da Nebula</h3>
+                      <p>Defina a inteligência central que comandará todo o ecossistema.</p>
+                    </div>
+                    <div className="global-ia-toggle-wrapper">
+                      <div 
+                        className={`mentor-toggle ${config.global_ia_enabled ? 'active' : ''}`}
+                        onClick={() => setConfig({...config, global_ia_enabled: !config.global_ia_enabled})}
+                      >
+                        <div className="toggle-dot"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <h3>Provedor Mestre</h3>
+                      <p>Selecione o serviço de IA principal.</p>
+                    </div>
+                    <select 
+                      className="glass-input"
+                      value={config.global_provider || 'openai'}
+                      onChange={(e) => setConfig({...config, global_provider: e.target.value})}
+                    >
+                      <option value="openai">OpenAI (ChatGPT)</option>
+                      <option value="anthropic">Anthropic (Claude)</option>
+                      <option value="google">Google Cloud (Gemini)</option>
+                      <option value="ollama">Ollama (Local)</option>
+                    </select>
+                  </div>
+
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <h3>API Token (Global)</h3>
+                      <p>Chave de acesso para o provedor mestre.</p>
+                    </div>
+                    <div className="integration-input-group">
+                      <input 
+                        type="password" 
+                        className="glass-input api-key-input"
+                        value={config.global_api_key || ''} 
+                        onChange={(e) => setConfig({...config, global_api_key: e.target.value})}
+                        placeholder="Inserir Token do Provedor Mestre..."
+                      />
+                      <button 
+                        className="test-api-btn glass"
+                        onClick={async () => {
+                          const provider = config.global_provider || 'openai';
+                          const apiKey = config.global_api_key;
+
+                          if (!apiKey && provider !== 'ollama') {
+                            return showToast("Insira o token para sincronizar!", "error");
+                          }
+
+                          showToast(`Sincronizando modelos ${provider.toUpperCase()}...`, "info");
+                          
+                          try {
+                            let models = [];
+                            
+                            // Tentativa de Fetch Real para OpenAI
+                            if (provider === 'openai') {
+                              try {
+                                const res = await fetch('https://api.openai.com/v1/models', {
+                                  headers: { 'Authorization': `Bearer ${apiKey}` }
+                                });
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  models = data.data
+                                    .map(m => m.id)
+                                    .filter(id => id.startsWith('gpt'))
+                                    .sort();
+                                }
+                              } catch (e) {
+                                console.warn("CORS bloqueou fetch direto. Usando lista de fallback segura.");
+                              }
+                              
+                              // Fallback se o fetch falhar ou for bloqueado
+                              if (models.length === 0) {
+                                models = ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
+                              }
+                            } else if (provider === 'anthropic') {
+                              models = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'];
+                            } else if (provider === 'google') {
+                              models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'];
+                            } else if (provider === 'ollama') {
+                              models = ['llama3', 'mistral', 'phi3', 'qwen'];
+                            }
+                            
+                            // Atualiza os modelos disponíveis e limpa o modelo selecionado se não estiver na nova lista
+                            setConfig({
+                              ...config, 
+                              fetched_global_models: models,
+                              global_model: models.includes(config.global_model) ? config.global_model : ''
+                            });
+                            
+                            showToast(`${models.length} modelos de ${provider.toUpperCase()} prontos! ✅`, "success");
+                          } catch (e) {
+                            showToast("Falha crítica na sincronização.", "error");
+                          }
+                        }}
+                      >
+                        Sincronizar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <h3>Modelo de Inteligência</h3>
+                      <p>Escolha o modelo após sincronizar a API.</p>
+                    </div>
+                    <select 
+                      className="glass-input"
+                      value={config.global_model || ''}
+                      onChange={(e) => setConfig({...config, global_model: e.target.value})}
+                    >
+                      <option value="">{config.fetched_global_models ? "Selecionar Modelo Sincronizado..." : "Sincronize a API primeiro"}</option>
+                      {config.fetched_global_models?.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                      {!config.fetched_global_models && config.global_model && (
+                         <option value={config.global_model}>{config.global_model} (Salvo)</option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="global-ia-tip">
+                    <div className="tip-icon">💡</div>
+                    <p>Status: {config.global_ia_enabled ? <strong>ATIVO</strong> : "Inativo"}. Motor: <strong>{config.global_provider?.toUpperCase()}</strong> | Modelo: <strong>{config.global_model || "Nenhum"}</strong></p>
+                  </div>
+
+                  <div className="settings-footer">
+                    <button 
+                      className="save-btn-master"
+                      onClick={async () => {
+                        if (!config.global_model) return showToast("Selecione um modelo antes de salvar!", "error");
+                        showToast("Gravando Cérebro Mestre no Supabase...", "info");
+                        const success = await onSave(config);
+                        if (success) showToast("Configuração Mestre Salva com Sucesso! 🌌", "success");
+                      }}
+                    >
+                      <span className="material-symbols-outlined">save</span>
+                      Salvar Configuração Mestre
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {activeSection === 'conexoes' && (
                 <div className="settings-group fade-in">
                   <div className="conexoes-header">

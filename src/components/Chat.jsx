@@ -129,8 +129,23 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
     await saveMessage('user', input, currentChatId);
 
     try {
-      const provider = ollamaConfig.active_provider || 'ollama';
-      console.log(`%c[Nebula Engine] Motor Ativo: ${provider.toUpperCase()}`, 'color: #818cf8; font-weight: bold;');
+      // Lógica de Override do Cérebro Mestre (IA Global)
+      const isGlobalIA = ollamaConfig.global_ia_enabled;
+      const provider = isGlobalIA ? (ollamaConfig.global_provider || 'openai') : (ollamaConfig.active_provider || 'ollama');
+      const activeModel = isGlobalIA ? (ollamaConfig.global_model || 'gpt-4o') : (
+        provider === 'openai' ? ollamaConfig.openai_model :
+        provider === 'anthropic' ? ollamaConfig.anthropic_model :
+        provider === 'google' ? ollamaConfig.google_model :
+        ollamaConfig.model
+      );
+      const activeKey = isGlobalIA ? ollamaConfig.global_api_key : (
+        provider === 'openai' ? ollamaConfig.openai_key :
+        provider === 'anthropic' ? ollamaConfig.anthropic_key :
+        provider === 'google' ? ollamaConfig.google_key :
+        null
+      );
+
+      console.log(`%c[Nebula Engine] ${isGlobalIA ? '🌐 MODO GLOBAL ATIVO' : '🏠 Modo Local'}: ${provider.toUpperCase()} (${activeModel})`, 'color: #818cf8; font-weight: bold;');
 
       let projectContext = "";
       if (ollamaConfig.projectInstructions) {
@@ -171,12 +186,12 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': ollamaConfig.anthropic_key,
+            'x-api-key': activeKey,
             'anthropic-version': '2023-06-01',
             'dangerously-allow-browser': 'true'
           },
           body: JSON.stringify({
-            model: ollamaConfig.anthropic_model || 'claude-3-5-sonnet-20240620',
+            model: activeModel,
             max_tokens: 4096,
             messages: payloadMessages.filter(m => m.role !== 'system'),
             system: systemMessage.content,
@@ -213,7 +228,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
         }
       }
       else if (provider === 'google') {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ollamaConfig.google_model || 'gemini-1.5-pro'}:streamGenerateContent?key=${ollamaConfig.google_key}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:streamGenerateContent?key=${activeKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -257,10 +272,10 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${ollamaConfig.openai_key}`
+            'Authorization': `Bearer ${activeKey}`
           },
           body: JSON.stringify({
-            model: ollamaConfig.openai_model || 'gpt-4o',
+            model: activeModel,
             messages: payloadMessages,
             stream: true
           })
@@ -300,7 +315,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: ollamaConfig.model,
+            model: activeModel,
             messages: payloadMessages,
             stream: true
           })
@@ -396,19 +411,35 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
   };
 
   const getCurrentModelDisplay = () => {
+    if (ollamaConfig.global_ia_enabled) {
+      return `🌐 ${ollamaConfig.global_model?.toUpperCase() || 'MESTRE'}`;
+    }
     const provider = ollamaConfig.active_provider || 'ollama';
     if (provider === 'openai') return ollamaConfig.openai_model || 'GPT-4o';
     if (provider === 'anthropic') return 'Claude 3.5';
     if (provider === 'google') return 'Gemini 1.5 Pro';
-    return ollamaConfig.model.charAt(0).toUpperCase() + ollamaConfig.model.slice(1);
+    return ollamaConfig.model?.charAt(0).toUpperCase() + ollamaConfig.model?.slice(1);
   };
 
-  const providers = [
-    { id: 'ollama', name: 'Ollama (Local)', models: ['llama3', 'mistral', 'phi3'] },
-    { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'], key: 'openai_key' },
-    { id: 'anthropic', name: 'Anthropic', models: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'], key: 'anthropic_key' },
-    { id: 'google', name: 'Google Gemini', models: ['gemini-1.5-pro', 'gemini-1.5-flash'], key: 'google_key' }
-  ];
+  const getAvailableProviders = () => {
+    const list = [
+      { id: 'ollama', name: 'Ollama (Local)', models: ['llama3', 'mistral', 'phi3'] },
+    ];
+    
+    if (ollamaConfig.openai_key) {
+      list.push({ id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'] });
+    }
+    if (ollamaConfig.anthropic_key) {
+      list.push({ id: 'anthropic', name: 'Anthropic', models: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'] });
+    }
+    if (ollamaConfig.google_key) {
+      list.push({ id: 'google', name: 'Google Gemini', models: ['gemini-1.5-pro', 'gemini-1.5-flash'] });
+    }
+    
+    return list;
+  };
+
+  const availableProviders = getAvailableProviders();
 
   return (
     <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
@@ -451,9 +482,9 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
                 <div className="controls-right">
                   <div className="model-selector-container">
                     <div 
-                      className="model-selector-mini glass" 
-                      onClick={() => setShowModelSelector(!showModelSelector)}
-                      title="Clique para trocar o motor"
+                      className={`model-selector-mini glass ${ollamaConfig.global_ia_enabled ? 'global-locked' : ''}`} 
+                      onClick={() => !ollamaConfig.global_ia_enabled && setShowModelSelector(!showModelSelector)}
+                      title={ollamaConfig.global_ia_enabled ? "Modo Global Ativo (Configurado nas Definições)" : "Clique para trocar o motor"}
                     >
                       <span className="dot-engine"></span>
                       <span>{getCurrentModelDisplay()}</span>
@@ -464,7 +495,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
 
                     {showModelSelector && (
                       <div className="model-dropdown-portal glass fade-in">
-                        {providers.map(p => (
+                        {availableProviders.map(p => (
                           <div key={p.id} className="provider-group">
                             <label className={(!p.key || ollamaConfig[p.key]) ? '' : 'locked'}>
                               {p.name} {(!p.key || ollamaConfig[p.key]) ? '' : '🔒'}
@@ -568,15 +599,16 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
             </div>
             <div className="model-selector-container mini-bottom">
                <div 
-                  className="model-selector-mini glass" 
-                  onClick={() => setShowModelSelector(!showModelSelector)}
+                  className={`model-selector-mini glass ${ollamaConfig.global_ia_enabled ? 'global-locked' : ''}`} 
+                  onClick={() => !ollamaConfig.global_ia_enabled && setShowModelSelector(!showModelSelector)}
+                  title={ollamaConfig.global_ia_enabled ? "Modo Global Ativo" : "Trocar motor"}
                 >
                   <span className="dot-engine"></span>
                   <span>{getCurrentModelDisplay()}</span>
                 </div>
                 {showModelSelector && (
                   <div className="model-dropdown-portal glass bottom-mode fade-in">
-                     {providers.map(p => (
+                     {availableProviders.map(p => (
                           <div key={p.id} className="provider-group">
                             <label className={(!p.key || ollamaConfig[p.key]) ? '' : 'locked'}>
                               {p.name} {(!p.key || ollamaConfig[p.key]) ? '' : '🔒'}

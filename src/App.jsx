@@ -14,10 +14,11 @@ import ProjectPage from './pages/ProjectPage';
 import OptimizerPage from './pages/OptimizerPage';
 import ProjectsListPage from './pages/ProjectsListPage';
 import AllChatsPage from './pages/AllChatsPage';
-import RoadmapPage from './pages/RoadmapPage';
+import EngineerPage from './pages/EngineerPage';
 import SupportPage from './pages/SupportPage';
 import QuotaPage from './pages/QuotaPage';
 import Modal from './components/Modal';
+import MasterOSPage from './pages/MasterOSPage';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -363,10 +364,19 @@ function App() {
       );
     }
     if (selectedPage === 'optimizer') return <OptimizerPage />;
+    if (selectedPage === 'engineer') return <EngineerPage config={config} />;
     if (selectedPage === 'support') return <SupportPage config={config} session={session} />;
     if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings')} />;
-    if (selectedPage === 'roadmap') return <RoadmapPage ollamaConfig={config} session={session} />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;
+    if (selectedPage === 'master-os') {
+      return (
+        <MasterOSPage 
+          config={config} 
+          setConfig={setConfig} 
+          onSave={handleSaveConfig} 
+        />
+      );
+    }
     if (selectedPage === 'all-chats') {
       return (
         <AllChatsPage 

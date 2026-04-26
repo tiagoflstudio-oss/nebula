@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import './SidebarMinimal.css';
 
 const Sidebar = ({ 
   onSelectChat, 
@@ -110,17 +111,14 @@ const Sidebar = ({
           </button>
 
           <button 
-            className={`nav-item ${selectedPage === 'roadmap' ? 'active' : ''}`}
-            onClick={() => onSelectPage('roadmap')}
-            title="Roadmap"
+            className={`nav-item ${selectedPage === 'engineer' ? 'active' : ''}`}
+            onClick={() => onSelectPage('engineer')}
+            title="Engenheiro"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 12h12" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M21 12h-2" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="12" cy="12" r="9"/>
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/>
             </svg>
-            {!isCollapsed && <span>Roadmap</span>}
+            {!isCollapsed && <span>Engenheiro</span>}
           </button>
 
           <button 
@@ -132,6 +130,21 @@ const Sidebar = ({
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.72-8.72 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {!isCollapsed && <span>Suporte Zen</span>}
+          </button>
+
+          <button 
+            className={`nav-item ${selectedPage === 'master-os' ? 'active' : ''}`}
+            onClick={() => {
+              onSelectProject(null);
+              onSelectChat(null);
+              onSelectPage('master-os');
+            }}
+            title="Master OS"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            {!isCollapsed && <span style={{ color: '#a78bfa', fontWeight: 'bold' }}>Master OS</span>}
           </button>
         </nav>
       </div>

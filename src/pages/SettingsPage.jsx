@@ -102,12 +102,12 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
   const menuItems = [
     { id: 'geral', label: 'Geral', icon: '⚙️' },
     { id: 'conta', label: 'Conta', icon: '👤' },
-    ...(userRole === 'vip' ? [
+    ...(userRole === 'admin' || userRole === 'vip' ? [
       { id: 'ia-engine', label: 'IA Engine', icon: '🧠' },
-      { id: 'master-os', label: 'Master OS', icon: '🖥️' }
+      { id: 'master-os', label: 'Master OS', icon: '🖥️' },
+      { id: 'ia-global', label: 'IA Global (Mestre)', icon: '🌐' }
     ] : []),
     { id: 'integracoes', label: 'Integrações de API', icon: '🔌' },
-    ...(userRole === 'admin' || userRole === 'vip' ? [{ id: 'ia-global', label: 'IA Global (Mestre)', icon: '🌐' }] : []),
     { id: 'conexoes', label: 'Conexão de Conta', icon: '🔗' },
     { id: 'nebula-code', label: 'Nebula Code', icon: '💻' },
   ];

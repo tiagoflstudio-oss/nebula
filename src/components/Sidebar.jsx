@@ -88,6 +88,17 @@ const Sidebar = ({
           </button>
 
           <button 
+            className={`nav-item ${selectedPage === 'quota' ? 'active' : ''}`}
+            onClick={() => onSelectPage('quota')}
+            title="Rastreador de Cota"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {!isCollapsed && <span>Rastreador de Cota</span>}
+          </button>
+
+          <button 
             className={`nav-item ${selectedPage === 'optimizer' ? 'active' : ''}`}
             onClick={() => onSelectPage('optimizer')}
             title="Otimizador"
@@ -110,6 +121,17 @@ const Sidebar = ({
               <circle cx="12" cy="12" r="9"/>
             </svg>
             {!isCollapsed && <span>Roadmap</span>}
+          </button>
+
+          <button 
+            className={`nav-item ${selectedPage === 'support' ? 'active' : ''} support-zen-nav`}
+            onClick={() => onSelectPage('support')}
+            title="Suporte Zen"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.72-8.72 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {!isCollapsed && <span>Suporte Zen</span>}
           </button>
         </nav>
       </div>

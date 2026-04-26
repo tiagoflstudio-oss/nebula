@@ -8,10 +8,8 @@ const ProjectsListPage = ({ projects, onCreateProject, onSelectProject, onDelete
           <h1>Seus <span>Projetos</span></h1>
           <p>Gerencie seus clientes e ambientes de desenvolvimento em um só lugar.</p>
         </div>
-        <button className="btn-primary" onClick={onCreateProject}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+        <button className="btn-premium-action" onClick={onCreateProject}>
+          <span className="material-symbols-outlined">add_circle</span>
           Novo Projeto
         </button>
       </header>

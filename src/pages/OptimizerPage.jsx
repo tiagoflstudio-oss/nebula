@@ -70,89 +70,103 @@ const OptimizerPage = () => {
   };
 
   return (
-    <div className="optimizer-page fade-in">
-      <header className="optimizer-header">
-        <div className="optimizer-info">
+    <div className="page-container optimizer-page fade-in">
+      <div className="page-header compact-header">
+        <div className="header-title-row">
           <h1>Nebula <span>Optimizer</span></h1>
-          <p>Monitoramento de hardware e rede em tempo real.</p>
-        </div>
-        <div className={`status-badge glass ${stats.connected ? 'online' : 'offline'}`}>
-          <div className="status-dot"></div>
-          {stats.connected ? 'Bridge Ativo' : 'Bridge Desconectado'}
-        </div>
-      </header>
-
-      <div className="optimizer-stats">
-        <div className="stat-card glass">
-          <span className="stat-label">Latência (Ping)</span>
-          <span className={`stat-value ${optimizing ? 'pulse-text' : ''}`}>
-            {stats.connected ? `${stats.ping}ms` : '--'}
-          </span>
-          <span className="stat-change negative">Internet em tempo real</span>
-        </div>
-        <div className={`stat-card glass ${stats.cpu > 80 ? 'warning' : ''}`}>
-          <span className="stat-label">Uso de CPU</span>
-          <span className={`stat-value ${optimizing ? 'pulse-text' : ''}`}>
-            {stats.connected ? `${stats.cpu}%` : '--'}
-          </span>
-          <span className="stat-change positive">Carga do Sistema</span>
-        </div>
-        <div className="stat-card glass">
-          <span className="stat-label">RAM Em Uso</span>
-          <span className={`stat-value ${optimizing ? 'pulse-text' : ''}`}>
-            {stats.connected ? `${stats.ram} GB` : '--'}
-          </span>
-          <span className="stat-change positive">Memória Volátil</span>
+          <div className={`status-badge-premium ${stats.connected ? 'online' : 'offline'}`}>
+            <span className="dot"></span>
+            {stats.connected ? 'Bridge Ativo' : 'Bridge Desconectado'}
+          </div>
         </div>
       </div>
 
-      <div className="optimizer-main glass">
-        <div className="optimizer-visual">
-          <div className={`optimizer-core ${optimizing ? 'rotating' : ''}`}>
-            <svg viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="280" />
-              <path d="M50 20v10M50 70v10M20 50h10M70 50h10" stroke="currentColor" strokeWidth="2" />
-            </svg>
-            <div className="core-inner">
-              {optimizing ? `${progress}%` : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>}
-            </div>
+      <div className="optimizer-stats-grid">
+        <div className="premium-stat-card glass">
+          <div className="stat-icon">📡</div>
+          <div className="stat-info">
+            <span className="label">Latência (Ping)</span>
+            <span className={`value ${optimizing ? 'pulse-text' : ''}`}>
+              {stats.connected ? `${stats.ping}ms` : '--'}
+            </span>
           </div>
+          <div className="stat-footer positive">Internet Estável</div>
         </div>
 
-        <div className="optimizer-actions">
-          <h2>Análise de Performance</h2>
-          <p>Inicie a otimização para limpar processos desnecessários e priorizar o hardware para tarefas críticas.</p>
-          
-          <div className="optimizer-console glass">
-            {!stats.connected && <div className="console-line warning">⚠️ Aviso: Inicie o 'node nebula-bridge.js' para dados reais.</div>}
-            {logs.length === 0 && stats.connected && <span className="console-placeholder">Aguardando comando...</span>}
+        <div className={`premium-stat-card glass ${stats.cpu > 80 ? 'warning' : ''}`}>
+          <div className="stat-icon">⚡</div>
+          <div className="stat-info">
+            <span className="label">Uso de CPU</span>
+            <span className={`value ${optimizing ? 'pulse-text' : ''}`}>
+              {stats.connected ? `${stats.cpu}%` : '--'}
+            </span>
+          </div>
+          <div className="stat-footer">Carga Dinâmica</div>
+        </div>
+
+        <div className="premium-stat-card glass">
+          <div className="stat-icon">🧠</div>
+          <div className="stat-info">
+            <span className="label">RAM Livre</span>
+            <span className={`value ${optimizing ? 'pulse-text' : ''}`}>
+              {stats.connected ? `${stats.ram} GB` : '--'}
+            </span>
+          </div>
+          <div className="stat-footer positive">Memória Volátil</div>
+        </div>
+      </div>
+
+      <div className="optimizer-dashboard">
+        <div className="optimizer-console-container glass">
+          <div className="console-header">
+            <span className="title">Terminal de Diagnóstico</span>
+            <div className={`scan-line ${optimizing ? 'active' : ''}`}></div>
+          </div>
+          <div className="optimizer-console-content">
+            {!stats.connected && <div className="line warning">⚠️ Alerta: Inicie o 'node nebula-bridge.js' para sincronizar hardware.</div>}
+            {logs.length === 0 && stats.connected && <span className="placeholder">Pronto para otimização...</span>}
             {logs.map((log, i) => (
-              <div key={i} className="console-line">{log}</div>
+              <div key={i} className="line">{log}</div>
             ))}
           </div>
-
           <button 
-            className={`btn-optimize ${optimizing ? 'active' : ''}`} 
+            className={`btn-premium-optimize ${optimizing ? 'active' : ''}`} 
             onClick={startOptimization}
             disabled={optimizing || !stats.connected}
           >
-            {optimizing ? 'Otimizando Sistema...' : stats.connected ? 'Otimizar Agora' : 'Aguardando Bridge...'}
+            {optimizing ? (
+              <div className="progress-container">
+                <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+                <span className="progress-text">{progress}% Otimizando...</span>
+              </div>
+            ) : (
+              <><span className="btn-icon">🚀</span> Otimizar Sistema Agora</>
+            )}
           </button>
         </div>
-      </div>
 
-      <div className="optimizer-features">
-        <div className="feature-card glass">
-          <h4>Limpeza de Cache</h4>
-          <p>Remove arquivos temporários e logs que atrasam o sistema.</p>
-        </div>
-        <div className="feature-card glass">
-          <h4>Network Boost</h4>
-          <p>Otimiza rotas de rede para diminuir o jitter em jogos online.</p>
-        </div>
-        <div className="feature-card glass">
-          <h4>Prioridade de CPU</h4>
-          <p>Aloca mais recursos para o aplicativo em foco.</p>
+        <div className="optimizer-features-column">
+          <div className="premium-feature-item glass">
+            <div className="f-icon">🧹</div>
+            <div className="f-content">
+              <h4>Limpeza de Cache</h4>
+              <p>Elimina buffers e arquivos temporários.</p>
+            </div>
+          </div>
+          <div className="premium-feature-item glass">
+            <div className="f-icon">🌐</div>
+            <div className="f-content">
+              <h4>Network Boost</h4>
+              <p>Reduz o jitter e estabiliza rotas.</p>
+            </div>
+          </div>
+          <div className="premium-feature-item glass">
+            <div className="f-icon">🎯</div>
+            <div className="f-content">
+              <h4>Prioridade CPU</h4>
+              <p>Foca hardware na tarefa ativa.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

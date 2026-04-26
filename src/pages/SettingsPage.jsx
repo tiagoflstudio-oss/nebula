@@ -1,9 +1,98 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import { buildAuthUrl } from '../services/oauthService';
 import MasterOS from '../components/MasterOS';
 
-const SettingsPage = ({ config, setConfig, userRole, session, onSave }) => {
+const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalConfig }) => {
   const [activeSection, setActiveSection] = useState('geral');
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+  const [connections, setConnections] = useState([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newConn, setNewConn] = useState({ provider: 'antigravity', name: '', access_token: '', auth_type: 'apikey' });
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [isWaitingForCode, setIsWaitingForCode] = useState(false);
+  const [oauthCode, setOauthCode] = useState('');
+
+  React.useEffect(() => {
+    if (activeSection === 'conexoes') {
+      fetchConnections();
+    }
+  }, [activeSection]);
+
+  const fetchConnections = async () => {
+    setConnectionsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('provider_connections')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setConnections(data || []);
+    } catch (err) {
+      showToast("Erro ao carregar conexões", "error");
+    } finally {
+      setConnectionsLoading(false);
+    }
+  };
+
+  const handleAddConnection = async () => {
+    if (!newConn.access_token) return showToast("Token é obrigatório", "error");
+    try {
+      const { error } = await supabase
+        .from('provider_connections')
+        .insert([{ 
+          ...newConn, 
+          user_id: session?.user?.id,
+          is_active: true 
+        }]);
+      if (error) throw error;
+      showToast("Conexão adicionada!", "success");
+      setShowAddModal(false);
+      setNewConn({ provider: 'antigravity', name: '', access_token: '' });
+      fetchConnections();
+    } catch (err) {
+      showToast("Erro ao salvar: " + err.message, "error");
+    }
+  };
+
+  const handleDeleteConnection = (id) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Excluir Conexão',
+      message: 'Tem certeza que deseja apagar esta conexão de API? Esta ação removerá o acesso do Rastreador de Cota permanentemente.',
+      type: 'confirm',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('provider_connections')
+            .delete()
+            .eq('id', id);
+          if (error) throw error;
+          setConnections(prev => prev.filter(c => c.id !== id));
+          showToast("Conexão excluída", "success");
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
+        } catch (err) {
+          showToast("Erro ao excluir", "error");
+        }
+      }
+    });
+  };
+
+  const handleOAuthStart = () => {
+    try {
+      const redirectUri = window.location.origin + '/callback'; // Simulated redirect
+      const state = Math.random().toString(36).substring(7);
+      const url = buildAuthUrl(newConn.provider, null, redirectUri, state); // Service uses hardcoded IDs now
+      
+      // Open in new tab
+      window.open(url, '_blank');
+      showToast("Janela de autorização aberta! Após autorizar, cole o código abaixo.", "info");
+      setIsWaitingForCode(true);
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
 
   const showToast = (message, type = 'info') => {
     setToast({ show: true, message, type });
@@ -18,6 +107,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave }) => {
       { id: 'master-os', label: 'Master OS', icon: '🖥️' }
     ] : []),
     { id: 'integracoes', label: 'Integrações', icon: '🔌' },
+    { id: 'conexoes', label: 'Conexões de API', icon: '🔗' },
     { id: 'nebula-code', label: 'Nebula Code', icon: '💻' },
   ];
 
@@ -254,6 +344,48 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave }) => {
                   </div>
                 </div>
               )}
+              {activeSection === 'conexoes' && (
+                <div className="settings-group fade-in">
+                  <div className="conexoes-header">
+                    <p>Gerencie seus tokens para o Rastreador de Cota.</p>
+                    <button className="btn-premium-action mini" onClick={() => setShowAddModal(true)}>
+                      <span className="material-symbols-outlined">add</span>
+                      Nova Conexão
+                    </button>
+                  </div>
+
+                  <div className="conexoes-list">
+                    {connectionsLoading ? (
+                      <div className="shimmer-list">
+                        <div className="shimmer-row"></div>
+                        <div className="shimmer-row"></div>
+                      </div>
+                    ) : connections.length === 0 ? (
+                      <div className="empty-conexoes">
+                        <p>Nenhuma conexão ativa.</p>
+                      </div>
+                    ) : (
+                      connections.map(conn => (
+                        <div key={conn.id} className="conexao-row glass">
+                          <div className="conexao-info">
+                            <span className="p-badge">{conn.provider}</span>
+                            <div className="p-details">
+                              <strong>{conn.name || 'Sem nome'}</strong>
+                              <code>{conn.access_token ? `••••${conn.access_token.slice(-4)}` : 'Sem Token'}</code>
+                            </div>
+                          </div>
+                          <div className="conexao-actions">
+                            <button className="icon-btn delete" onClick={() => handleDeleteConnection(conn.id)}>
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
               {activeSection === 'ia-engine' && (
                 <div className="settings-group fade-in">
                   <div className="engine-header">
@@ -453,6 +585,101 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave }) => {
             <p>{toast.message}</p>
           </div>
           <div className="toast-progress"></div>
+        </div>
+      )}
+
+      {showAddModal && (
+        <div className="settings-modal-overlay fade-in">
+          <div className="settings-modal glass">
+            <h3>Nova Conexão de API</h3>
+            <div className="modal-form">
+              <div className="mode-selector glass">
+                <button 
+                  className={!isAutoMode ? 'active' : ''} 
+                  onClick={() => setIsAutoMode(false)}
+                >Manual</button>
+                <button 
+                  className={isAutoMode ? 'active' : ''} 
+                  onClick={() => setIsAutoMode(true)}
+                >Automático (OAuth)</button>
+              </div>
+
+              <div className="form-group">
+                <label>Provedor</label>
+                <select 
+                  className="glass-input" 
+                  value={newConn.provider}
+                  onChange={(e) => setNewConn({...newConn, provider: e.target.value})}
+                >
+                  <option value="antigravity">Antigravity</option>
+                  <option value="github">GitHub Copilot</option>
+                  <option value="claude">Claude (Anthropic)</option>
+                  <option value="codex">Codex (OpenAI)</option>
+                </select>
+              </div>
+
+              {isAutoMode ? (
+                <div className="auto-mode-info fade-in">
+                  <p>Clique abaixo para autorizar o acesso à sua conta. Você será redirecionado para o Google.</p>
+                  
+                  {!isWaitingForCode ? (
+                    <button className="btn-premium-action w-full" onClick={handleOAuthStart}>
+                      <span className="material-symbols-outlined">link</span>
+                      Conectar com Google
+                    </button>
+                  ) : (
+                    <div className="code-input-area fade-in">
+                      <div className="form-group">
+                        <label>Código de Autorização</label>
+                        <input 
+                          type="text" 
+                          className="glass-input" 
+                          placeholder="Cole o código aqui..."
+                          value={oauthCode}
+                          onChange={(e) => setOauthCode(e.target.value)}
+                        />
+                      </div>
+                      <button className="btn-premium-action w-full" onClick={() => showToast("Implementando troca de token...", "info")}>
+                        <span className="material-symbols-outlined">check_circle</span>
+                        Finalizar Conexão
+                      </button>
+                      <button className="btn-link" onClick={() => setIsWaitingForCode(false)}>Voltar</button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="manual-mode-form fade-in">
+                  <div className="form-group">
+                    <label>Nome da Conta (E-mail)</label>
+                    <input 
+                      type="text" 
+                      className="glass-input" 
+                      placeholder="ex: conta@gmail.com"
+                      value={newConn.name}
+                      onChange={(e) => setNewConn({...newConn, name: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Access Token</label>
+                    <input 
+                      type="password" 
+                      className="glass-input" 
+                      placeholder="Cole seu token aqui..."
+                      value={newConn.access_token}
+                      onChange={(e) => setNewConn({...newConn, access_token: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button className="btn-action-minimalist" onClick={() => setShowAddModal(false)}>Cancelar</button>
+              <button className="btn-premium-action" onClick={handleAddConnection}>
+                <span className="material-symbols-outlined">save</span>
+                Salvar Conexão
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

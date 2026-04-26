@@ -137,11 +137,24 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
         projectContext = `\nInstruções Adicionais do Projeto: ${ollamaConfig.projectInstructions}`;
       }
 
+      let specializedContext = "";
+      const lowerInput = input.toLowerCase();
+      
+      if (lowerInput.includes("contrato")) {
+        specializedContext = "\nVocê é agora um especialista em Direito Civil Brasileiro. Analise o contrato focando em cláusulas abusivas, prazos, multas e rescisões. Explique de forma simples para um leigo.";
+      } else if (lowerInput.includes("burocracia") || lowerInput.includes("receita") || lowerInput.includes("inss")) {
+        specializedContext = "\nVocê é um consultor administrativo especialista em órgãos públicos brasileiros (Receita, DETRAN, INSS). Explique os termos técnicos da notificação e oriente o passo-a-passo para regularização.";
+      } else if (lowerInput.includes("trabalhista")) {
+        specializedContext = "\nVocê é um especialista em CLT e Direito do Trabalho. Explique os direitos do trabalhador de forma clara, mencionando verbas rescisórias, horas extras ou FGTS quando pertinente.";
+      } else if (lowerInput.includes("reclamação") || lowerInput.includes("procon")) {
+        specializedContext = "\nVocê é um mediador especialista em Direito do Consumidor. Ajude a redigir uma reclamação formal, clara e fundamentada para Procon ou Reclame Aqui, focando nos fatos e no pedido de solução.";
+      }
+
       const systemMessage = {
         role: 'system',
         content: `Você é o Nebula AI, uma inteligência artificial minimalista e de alta performance. 
-        Sua missão é ajudar o usuário com código, design e gestão de clientes. 
-        Seja direto, técnico quando necessário e sempre cordial.${projectContext}`
+        Sua missão é ajudar o usuário com código, design, gestão de clientes e agora com auxílio na Vida Burocrática Brasileira.${specializedContext}${projectContext}
+        Seja direto, técnico quando necessário e sempre cordial.`
       };
 
       const payloadMessages = [
@@ -497,10 +510,10 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
 
             <div className="skills-row">
               <button className="skill-btn"><span className="icon">{"</>"}</span> Código</button>
-              <button className="skill-btn"><span className="icon">📈</span> Estratégias</button>
-              <button className="skill-btn"><span className="icon">✨</span> Criar</button>
-              <button className="skill-btn"><span className="icon">✍️</span> Escrever</button>
-              <button className="skill-btn"><span className="icon">🎓</span> Aprender</button>
+              <button className="skill-btn" onClick={() => setInput("Analisar Contrato: Preciso de ajuda para interpretar este contrato de aluguel/financiamento...")}><span className="icon">📄</span> Contratos</button>
+              <button className="skill-btn" onClick={() => setInput("Burocracia: Recebi uma notificação (Receita/DETRAN/INSS) e preciso entender o que fazer...")}><span className="icon">🏛️</span> Governo</button>
+              <button className="skill-btn" onClick={() => setInput("Direitos Trabalhistas: Me explique em linguagem simples meus direitos nesta situação...")}><span className="icon">⚖️</span> Trabalhista</button>
+              <button className="skill-btn" onClick={() => setInput("Reclamação: Me ajude a escrever um recurso para o Procon/Reclame Aqui...")}><span className="icon">✍️</span> Reclamações</button>
             </div>
           </div>
         </div>
@@ -526,13 +539,19 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated }) => {
               </div>
             )}
           </div>
+          <div className="chat-input-toolbar fade-in">
+            <button className="toolbar-item" onClick={() => setInput("Analisar Contrato: ")} title="Contratos">📄</button>
+            <button className="toolbar-item" onClick={() => setInput("Burocracia: ")} title="Notificações/Governo">🏛️</button>
+            <button className="toolbar-item" onClick={() => setInput("Direitos Trabalhistas: ")} title="Trabalhista">⚖️</button>
+            <button className="toolbar-item" onClick={() => setInput("Reclamação Procon: ")} title="Reclamações">✍️</button>
+          </div>
           <div className="chat-input-wrapper bottom glass">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Pergunte qualquer coisa..."
+              placeholder="digite"
               autoFocus
             />
             <div className="bottom-input-actions">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
@@ -15,6 +15,8 @@ import OptimizerPage from './pages/OptimizerPage';
 import ProjectsListPage from './pages/ProjectsListPage';
 import AllChatsPage from './pages/AllChatsPage';
 import RoadmapPage from './pages/RoadmapPage';
+import SupportPage from './pages/SupportPage';
+import QuotaPage from './pages/QuotaPage';
 import Modal from './components/Modal';
 
 function App() {
@@ -60,6 +62,8 @@ function App() {
     onConfirm: () => {} 
   });
 
+  const processingOAuth = useRef(false);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -83,7 +87,67 @@ function App() {
     } else {
       setUserRole('user');
     }
+
+    // Handle OAuth Callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code && window.location.pathname === '/callback' && session && !processingOAuth.current) {
+      processingOAuth.current = true;
+      handleOAuthCallback(code);
+    }
   }, [session, selectedProjectId]);
+
+  const handleOAuthCallback = async (code) => {
+    try {
+      const { exchangeCode } = await import('./services/oauthService');
+      const provider = 'antigravity'; // For now, assume antigravity
+      const redirectUri = window.location.origin + '/callback';
+      
+      const tokens = await exchangeCode(provider, code, null, null, redirectUri);
+      
+      // Save to Supabase
+      const { error } = await supabase
+        .from('provider_connections')
+        .insert([{
+          user_id: session.user.id,
+          provider: provider,
+          name: session.user.email,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: new Date(Date.now() + (tokens.expires_in * 1000)).toISOString(),
+          settings: {
+            auth_type: 'oauth',
+            email: session.user.email
+          }
+        }]);
+
+      if (error) throw error;
+      
+      // Cleanup URL and go to quota tracker
+      window.history.replaceState({}, document.title, "/");
+      setSelectedPage('quota');
+      
+      setModalConfig({
+        isOpen: true,
+        title: 'Conexão Realizada!',
+        message: 'Sua conta Google foi conectada com sucesso ao Nebula. O Rastreador de Cota agora está ativo e sincronizado.',
+        type: 'confirm', // Use confirm just for the OK button
+        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+      });
+    } catch (err) {
+      console.error("Erro no callback OAuth:", err);
+      
+      setModalConfig({
+        isOpen: true,
+        title: 'Erro na Conexão',
+        message: 'Não foi possível finalizar a conexão automática: ' + err.message,
+        type: 'confirm',
+        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+      });
+      
+      window.history.replaceState({}, document.title, "/");
+    }
+  };
 
   const fetchProfile = async () => {
     if (!session?.user) return;
@@ -268,6 +332,17 @@ function App() {
   };
 
   const renderContent = () => {
+    if (window.location.pathname === '/callback') {
+      return (
+        <div className="callback-container glass fade-in">
+          <div className="loader-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <p>Finalizando conexão segura...</p>
+        </div>
+      );
+    }
+
     if (selectedChatId === 'settings' || selectedPage === 'settings') {
       return (
         <SettingsPage 
@@ -276,10 +351,13 @@ function App() {
           userRole={userRole} 
           session={session} 
           onSave={handleSaveConfig}
+          setModalConfig={setModalConfig}
         />
       );
     }
     if (selectedPage === 'optimizer') return <OptimizerPage />;
+    if (selectedPage === 'support') return <SupportPage config={config} session={session} />;
+    if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings')} />;
     if (selectedPage === 'roadmap') return <RoadmapPage ollamaConfig={config} session={session} />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;
     if (selectedPage === 'all-chats') {

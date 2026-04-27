@@ -642,161 +642,147 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
   };
 
 
-  return (
     <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
-      {!chatId && (
-        <div className="home-welcome-section">
-          <div className="greeting-wrapper">
-            <h1>{getGreeting()}</h1>
+      {!chatId && messages.length <= 1 && (
+        <div className="gemini-greeting fade-in">
+          <h1>
+            <span className="sparkle">✦</span> {getGreeting()}
+          </h1>
+          <h2>Por onde começamos?</h2>
+        </div>
+      )}
+
+      <div className="chat-input-area">
+        <div className="gemini-input-card glass">
+          <div className="input-top">
+            <textarea
+              rows="1"
+              value={input}
+              onChange={(e) => {
+                const val = e.target.value;
+                setInput(val);
+                setShowSkillsMenu(val.endsWith('/'));
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Digite um comando ou pergunta..."
+              autoFocus
+            />
+            {showSkillsMenu && (
+              <div className="skills-command-menu glass fade-in">
+                {skills.map(s => (
+                  <div 
+                    key={s.id} 
+                    className="skill-option"
+                    onClick={() => {
+                      setInput(prev => prev.replace(/\/$/, '') + `/${s.name.toLowerCase().replace(/\s+/g, '')} `);
+                      setShowSkillsMenu(false);
+                    }}
+                  >
+                    <span className="skill-cmd">/{s.name.toLowerCase().replace(/\s+/g, '')}</span>
+                    <span className="skill-desc">{s.description.substring(0, 40)}...</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
-          <div className="home-input-container">
-            <div className="chat-input-wrapper large glass">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setInput(val);
-                  setShowSkillsMenu(val.endsWith('/'));
-                }}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={placeholderText}
-                autoFocus
-              />
-              {showSkillsMenu && (
-                <div className="skills-command-menu glass fade-in">
-                  {skills.map(s => (
-                    <div 
-                      key={s.id} 
-                      className="skill-option"
-                      onClick={() => {
-                        setInput(prev => prev.replace(/\/$/, '') + `/${s.name.toLowerCase().replace(/\s+/g, '')} `);
-                        setShowSkillsMenu(false);
-                      }}
-                    >
-                      <span className="skill-cmd">/{s.name.toLowerCase().replace(/\s+/g, '')}</span>
-                      <span className="skill-desc">{s.description.substring(0, 40)}...</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="chat-input-controls">
-                <div className="controls-left">
-                  <button className="input-action-btn" title="Anexar arquivo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </button>
-                  <button 
-                    className={`voice-btn ${isListening ? 'listening' : ''}`} 
-                    onClick={toggleListening} 
-                    title={isListening ? "Ouvindo..." : "Usar Microfone"}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                    </svg>
-                  </button>
-                </div>
-                
-                <div className="controls-right">
-                  <div className="dual-selector-wrapper">
-                    {/* Botão Cérebro Mestre */}
-                    <div 
-                      className={`selector-btn glass ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
-                      onClick={() => {
-                        setSelectorMode('global');
-                        setShowModelSelector(true);
-                      }}
-                      title="IAs do Cérebro Mestre (Global)"
-                    >
-                      <span className="icon">🌐</span>
-                      <span className="label">Mestre</span>
-                    </div>
-
-                    {/* Botão Meu Cérebro (Individual) */}
-                    <div 
-                      className={`selector-btn glass ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectorMode('local');
-                        setShowModelSelector(true);
-                      }}
-                      title="Minhas IAs Configuradas"
-                    >
-                      <span className="icon">👤</span>
-                      <span className="label">Pessoal</span>
-                    </div>
-
-                    {showModelSelector && (
-                      <div className="model-dropdown-portal glass fade-in">
-                        <div className="dropdown-header">
-                          <h3>{selectorMode === 'global' ? '🧠 IAs do Mestre' : '🔑 Minhas Integrações'}</h3>
-                          <button onClick={() => setShowModelSelector(false)}>✕</button>
-                        </div>
-                        
-                        {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig).map(p => (
-                          <div key={p.id} className="provider-group">
-                            <label className={(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : 'locked'}>
-                              {p.name} {(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : '🔒'}
-                            </label>
-                            <div className="models-list">
-                              {p.models.map(m => {
-                                const isActive = selectorMode === 'global' 
-                                  ? (ollamaConfig.global_ia_enabled && ollamaConfig.global_selected_provider === p.id && ollamaConfig.global_selected_model === m)
-                                  : (!ollamaConfig.global_ia_enabled && ollamaConfig.active_provider === p.id && (
-                                      (p.id === 'ollama' && ollamaConfig.model === m) ||
-                                      (p.id === 'openai' && ollamaConfig.openai_model === m) ||
-                                      (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
-                                      (p.id === 'google' && ollamaConfig.google_model === m) ||
-                                      (p.id === 'openrouter' && ollamaConfig.openrouter_model === m)
-                                    ));
-
-                                return (
-                                  <button
-                                    key={m}
-                                    className={`model-option ${isActive ? 'active' : ''}`}
-                                    onClick={() => {
-                                      const newConfig = { ...ollamaConfig };
-                                      if (selectorMode === 'global') {
-                                        newConfig.global_ia_enabled = true;
-                                        newConfig.global_selected_provider = p.id;
-                                        newConfig.global_selected_model = m;
-                                      } else {
-                                        newConfig.global_ia_enabled = false;
-                                        newConfig.active_provider = p.id;
-                                        if (p.id === 'ollama') newConfig.model = m;
-                                        if (p.id === 'openai') newConfig.openai_model = m;
-                                        if (p.id === 'anthropic') newConfig.anthropic_model = m;
-                                        if (p.id === 'google') newConfig.google_model = m;
-                                        if (p.id === 'openrouter') newConfig.openrouter_model = m;
-                                      }
-                                      setConfig(newConfig);
-                                      setShowModelSelector(false);
-                                    }}
-                                  >
-                                    {m.split('/').pop().replace(/-\d{4}-\d{2}-\d{2}$/, '').split('-').join(' ').toUpperCase()}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <button className={`send-btn ${input.trim() ? 'active' : ''}`} onClick={handleSend} disabled={!input.trim()}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+          <div className="input-bottom">
+            <div className="bottom-tools-left">
+              <button className="btn-icon-tool" title="Adicionar arquivo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <button className={`btn-icon-tool ${isListening ? 'listening' : ''}`} onClick={toggleListening} title="Voz">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+                </svg>
+              </button>
+              <button className="btn-text-tool">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                Ferramentas
+              </button>
             </div>
+            
+            <div className="bottom-tools-right">
+              <div className="dual-selector-pill">
+                <div 
+                  className={`pill-option ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
+                  onClick={() => { setSelectorMode('global'); setShowModelSelector(true); }}
+                >
+                  🌐 Mestre
+                </div>
+                <div 
+                  className={`pill-option ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
+                  onClick={() => { setSelectorMode('local'); setShowModelSelector(true); }}
+                >
+                  👤 Pessoal
+                </div>
 
-            <div className="skills-row">
-              <button className="skill-btn"><span className="icon">{"</>"}</span> Código</button>
+                {showModelSelector && (
+                  <div className="model-dropdown-portal glass fade-in">
+                    <div className="dropdown-header">
+                      <h3>{selectorMode === 'global' ? '🧠 IAs do Mestre' : '🔑 Minhas Integrações'}</h3>
+                      <button onClick={() => setShowModelSelector(false)}>✕</button>
+                    </div>
+                    {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig, selectorMode).map(p => (
+                      <div key={p.id} className="provider-group">
+                        <label>{p.name}</label>
+                        <div className="models-list">
+                          {p.models.map(m => (
+                            <button
+                              key={m}
+                              className="model-option"
+                              onClick={() => {
+                                const newConfig = { ...ollamaConfig };
+                                if (selectorMode === 'global') {
+                                  newConfig.global_ia_enabled = true;
+                                  newConfig.global_selected_provider = p.id;
+                                  newConfig.global_selected_model = m;
+                                } else {
+                                  newConfig.global_ia_enabled = false;
+                                  newConfig.active_provider = p.id;
+                                  if (p.id === 'ollama') newConfig.model = m;
+                                  if (p.id === 'openai') newConfig.openai_model = m;
+                                  if (p.id === 'anthropic') newConfig.anthropic_model = m;
+                                  if (p.id === 'google') newConfig.google_model = m;
+                                  if (p.id === 'openrouter') newConfig.openrouter_model = m;
+                                }
+                                setConfig(newConfig);
+                                setShowModelSelector(false);
+                              }}
+                            >
+                              {m.split('/').pop().toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button className="btn-send-circle" onClick={handleSend} disabled={loading || !input.trim()}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {!chatId && messages.length <= 1 && (
+          <div className="suggestion-chips fade-in">
+            <button className="chip"><span className="emoji">🖼️</span> Criar imagem</button>
+            <button className="chip"><span className="emoji">🎸</span> Criar música</button>
+            <button className="chip">Melhore meu dia</button>
+            <button className="chip">Me ajude a aprender</button>
+            <button className="chip">Escrever algo</button>
+          </div>
+        )}
+      </div>
               {skills.slice(0, 4).map(s => (
                 <button 
                   key={s.id} 
@@ -831,142 +817,120 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
               </div>
             )}
           </div>
-          <div className="chat-input-toolbar fade-in">
-            <button className="toolbar-item" onClick={() => setInput("Analisar Contrato: ")} title="Contratos">📄</button>
-            <button className="toolbar-item" onClick={() => setInput("Burocracia: ")} title="Notificações/Governo">🏛️</button>
-            <button className="toolbar-item" onClick={() => setInput("Direitos Trabalhistas: ")} title="Trabalhista">⚖️</button>
-            <button className="toolbar-item" onClick={() => setInput("Reclamação Procon: ")} title="Reclamações">✍️</button>
-          </div>
-          <div className="chat-input-wrapper bottom glass">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => {
-                const val = e.target.value;
-                setInput(val);
-                setShowSkillsMenu(val.endsWith('/'));
-              }}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="digite"
-              autoFocus
-            />
-            {showSkillsMenu && (
-              <div className="skills-command-menu glass bottom-mode fade-in">
-                {skills.map(s => (
-                  <div 
-                    key={s.id} 
-                    className="skill-option"
-                    onClick={() => {
-                      setInput(prev => prev.replace(/\/$/, '') + `/${s.name.toLowerCase().replace(/\s+/g, '')} `);
-                      setShowSkillsMenu(false);
-                    }}
-                  >
-                    <span className="skill-cmd">/{s.name.toLowerCase().replace(/\s+/g, '')}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="bottom-input-actions">
-              <button 
-                className={`voice-btn-mini ${isListening ? 'listening' : ''}`} 
-                onClick={toggleListening}
-                title={isListening ? "Ouvindo..." : "Usar Microfone"}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                </svg>
-              </button>
-            </div>
-            <div className="dual-selector-wrapper mini-bottom">
-              {/* Botão Cérebro Mestre */}
-              <div 
-                className={`selector-btn glass mini ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
-                onClick={() => {
-                  setSelectorMode('global');
-                  setShowModelSelector(true);
-                }}
-                title="IAs do Mestre"
-              >
-                <span className="icon">🌐</span>
-              </div>
-
-              {/* Botão Pessoal */}
-              <div 
-                className={`selector-btn glass mini ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectorMode('local');
-                  setShowModelSelector(true);
-                }}
-                title="Minhas IAs"
-              >
-                <span className="icon">👤</span>
-              </div>
-
-              {showModelSelector && (
-                <div className="model-dropdown-portal glass bottom-mode fade-in">
-                  <div className="dropdown-header">
-                    <h3>{selectorMode === 'global' ? '🧠 IAs do Mestre' : '🔑 Minhas Integrações'}</h3>
-                    <button onClick={() => setShowModelSelector(false)}>✕</button>
-                  </div>
-                  
-                                    {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig, selectorMode).map(p => (
-
-                    <div key={p.id} className="provider-group">
-                      <label className={(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : 'locked'}>
-                        {p.name} {(!p.key || (selectorMode === 'global' ? globalSettings[p.key] : ollamaConfig[p.key])) ? '' : '🔒'}
-                      </label>
-                      <div className="models-list">
-                        {p.models.map(m => {
-                          const isActive = selectorMode === 'global' 
-                            ? (ollamaConfig.global_ia_enabled && ollamaConfig.global_selected_provider === p.id && ollamaConfig.global_selected_model === m)
-                            : (!ollamaConfig.global_ia_enabled && ollamaConfig.active_provider === p.id && (
-                                (p.id === 'ollama' && ollamaConfig.model === m) ||
-                                (p.id === 'openai' && ollamaConfig.openai_model === m) ||
-                                (p.id === 'anthropic' && ollamaConfig.anthropic_model === m) ||
-                                (p.id === 'google' && ollamaConfig.google_model === m) ||
-                                (p.id === 'openrouter' && ollamaConfig.openrouter_model === m)
-                              ));
-
-                          return (
-                            <button
-                              key={m}
-                              className={`model-option ${isActive ? 'active' : ''}`}
-                              onClick={() => {
-                                const newConfig = { ...ollamaConfig };
-                                if (selectorMode === 'global') {
-                                  newConfig.global_ia_enabled = true;
-                                  newConfig.global_selected_provider = p.id;
-                                  newConfig.global_selected_model = m;
-                                } else {
-                                  newConfig.global_ia_enabled = false;
-                                  newConfig.active_provider = p.id;
-                                  if (p.id === 'ollama') newConfig.model = m;
-                                  if (p.id === 'openai') newConfig.openai_model = m;
-                                  if (p.id === 'anthropic') newConfig.anthropic_model = m;
-                                  if (p.id === 'google') newConfig.google_model = m;
-                                  if (p.id === 'openrouter') newConfig.openrouter_model = m;
-                                }
-                                setConfig(newConfig);
-                                setShowModelSelector(false);
-                              }}
-                            >
-                                                             {formatModelName(m)}
-
-                            </button>
-                          );
-                        })}
+          
+          <div className="chat-input-area active-chat">
+            <div className="gemini-input-card glass">
+              <div className="input-top">
+                <textarea
+                  rows="1"
+                  value={input}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setInput(val);
+                    setShowSkillsMenu(val.endsWith('/'));
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="digite"
+                  autoFocus
+                />
+                {showSkillsMenu && (
+                  <div className="skills-command-menu glass bottom-mode fade-in">
+                    {skills.map(s => (
+                      <div 
+                        key={s.id} 
+                        className="skill-option"
+                        onClick={() => {
+                          setInput(prev => prev.replace(/\/$/, '') + `/${s.name.toLowerCase().replace(/\s+/g, '')} `);
+                          setShowSkillsMenu(false);
+                        }}
+                      >
+                        <span className="skill-cmd">/{s.name.toLowerCase().replace(/\s+/g, '')}</span>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="input-bottom">
+                <div className="bottom-tools-left">
+                  <button className="btn-icon-tool" title="Analisar Contrato" onClick={() => setInput("Analisar Contrato: ")}>📄</button>
+                  <button className={`btn-icon-tool ${isListening ? 'listening' : ''}`} onClick={toggleListening} title="Voz">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+                    </svg>
+                  </button>
                 </div>
-              )}
+                
+                <div className="bottom-tools-right">
+                  <div className="dual-selector-pill">
+                    <div 
+                      className={`pill-option ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
+                      onClick={() => { setSelectorMode('global'); setShowModelSelector(true); }}
+                    >
+                      🌐
+                    </div>
+                    <div 
+                      className={`pill-option ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
+                      onClick={() => { setSelectorMode('local'); setShowModelSelector(true); }}
+                    >
+                      👤
+                    </div>
+
+                    {showModelSelector && (
+                      <div className="model-dropdown-portal glass bottom-mode fade-in">
+                        <div className="dropdown-header">
+                          <h3>{selectorMode === 'global' ? '🧠 Mestre' : '🔑 Pessoal'}</h3>
+                          <button onClick={() => setShowModelSelector(false)}>✕</button>
+                        </div>
+                        {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig, selectorMode).map(p => (
+                          <div key={p.id} className="provider-group">
+                            <label>{p.name}</label>
+                            <div className="models-list">
+                              {p.models.map(m => (
+                                <button
+                                  key={m}
+                                  className="model-option"
+                                  onClick={() => {
+                                    const newConfig = { ...ollamaConfig };
+                                    if (selectorMode === 'global') {
+                                      newConfig.global_ia_enabled = true;
+                                      newConfig.global_selected_provider = p.id;
+                                      newConfig.global_selected_model = m;
+                                    } else {
+                                      newConfig.global_ia_enabled = false;
+                                      newConfig.active_provider = p.id;
+                                      if (p.id === 'ollama') newConfig.model = m;
+                                      if (p.id === 'openai') newConfig.openai_model = m;
+                                      if (p.id === 'anthropic') newConfig.anthropic_model = m;
+                                      if (p.id === 'google') newConfig.google_model = m;
+                                      if (p.id === 'openrouter') newConfig.openrouter_model = m;
+                                    }
+                                    setConfig(newConfig);
+                                    setShowModelSelector(false);
+                                  }}
+                                >
+                                  {m.split('/').pop().toUpperCase()}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button className="btn-send-circle" onClick={handleSend} disabled={loading || !input.trim()}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
-            <button className="send-btn-circle" onClick={handleSend} disabled={loading}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
           </div>
         </>
       )}

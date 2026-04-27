@@ -4008,3 +4008,102 @@ select.glass-input:focus, select.mini-select:focus {
 .chat-container { display: flex !important; flex-direction: column !important; height: 100vh !important; padding-top: 20px !important; gap: 24px !important; }
 .chat-input-area { flex-shrink: 0; z-index: 10; padding: 0 10px; }
 .chat-messages { flex: 1 !important; overflow-y: auto !important; padding: 10px 20px 100px 20px !important; display: flex !important; flex-direction: column !important; gap: 24px !important; }
+
+/* ===========================================================
+   THEME: PASTEL WHITE (BRANCO PASTEL)
+   =========================================================== */
+
+.main-wrapper.theme-pastel {
+  background: #f8f9fa !important;
+  color: #1e293b !important;
+}
+
+.theme-pastel .navbar {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.theme-pastel .nav-brand, 
+.theme-pastel .nav-master-btn, 
+.theme-pastel .nav-system-btn, 
+.theme-pastel .nav-icon-btn {
+  color: #1e293b !important;
+}
+
+.theme-pastel .chat-container {
+  background: transparent !important;
+}
+
+.theme-pastel .gemini-input-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.theme-pastel .gemini-input-card textarea {
+  color: #1e293b !important;
+}
+
+.theme-pastel .gemini-input-card textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.theme-pastel .btn-tool, 
+.theme-pastel .btn-send-circle {
+  color: #1e293b !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+.theme-pastel .gemini-greeting h1, 
+.theme-pastel .gemini-greeting h2 {
+  color: #1e293b !important;
+}
+
+.theme-pastel .message.user {
+  background: #818cf8 !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(129, 140, 248, 0.2) !important;
+}
+
+.theme-pastel .message.assistant {
+  color: #334155 !important;
+  background: transparent !important;
+}
+
+.theme-pastel .chip {
+  background: white !important;
+  color: #475569 !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+}
+
+.theme-pastel .chip:hover {
+  background: #f1f5f9 !important;
+  border-color: #818cf8 !important;
+}
+
+.theme-pastel .code-block {
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.theme-pastel .markdown-text strong {
+  color: #0f172a !important;
+}
+
+.theme-pastel .typing-dot {
+  background: #818cf8 !important;
+}
+
+.theme-pastel .app-container {
+  background: #f8f9fa !important;
+}
+
+/* Oculta o background animado no modo pastel para ficar limpo */
+.theme-pastel .bg-container {
+  opacity: 0.1 !important;
+  pointer-events: none;
+}

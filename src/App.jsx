@@ -267,8 +267,15 @@ function App() {
     if (!error) setProjects(data || []);
   };
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem('nebula_theme') || 'dark');
 
+  useEffect(() => {
+    localStorage.setItem('nebula_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'pastel' : 'dark');
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   const handleCreateProject = () => {
@@ -485,7 +492,7 @@ function App() {
 
   return (
     <Router>
-      <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''} theme-${theme}`}>
         <Background />
         {(!session && isAuthModalOpen) && (
           <Auth onClose={() => setIsAuthModalOpen(false)} />
@@ -522,7 +529,7 @@ function App() {
           isCollapsed={isSidebarCollapsed}
           onToggle={toggleSidebar}
         />
-        <div className="main-wrapper">
+        <div className={`main-wrapper theme-${theme}`}>
           <Navbar
             session={session}
             userRole={userRole}
@@ -538,6 +545,8 @@ function App() {
               setSelectedPage('home');
             }}
             onLoginClick={() => setIsAuthModalOpen(true)}
+            theme={theme}
+            onToggleTheme={toggleTheme}
           />
           <div className="main-content">
             {renderContent()}
@@ -551,7 +560,5 @@ function App() {
     </Router>
   );
 }
-
-
 
 export default App;

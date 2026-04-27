@@ -1,0 +1,234 @@
+.audit-hub {
+  padding: 2.5rem;
+  width: 100%;
+  height: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  color: white;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.audit-badge {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  margin-bottom: 1rem;
+}
+
+.audit-header h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.audit-header p {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+.security-score {
+  padding: 1.5rem 2.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+}
+
+.score-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+
+.score-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #4ade80;
+}
+
+/* Overview Cards */
+.audit-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.overview-card {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  border-radius: 20px;
+}
+
+.card-icon {
+  font-size: 2.2rem;
+  background: rgba(255, 255, 255, 0.05);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+}
+
+.card-data h3 {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.card-data p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+/* Logs Section */
+.logs-section {
+  border-radius: 24px;
+  padding: 2rem;
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.filter-btn.active {
+  color: #60a5fa;
+  border-bottom: 2px solid #60a5fa;
+}
+
+.logs-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-table-header {
+  display: grid;
+  grid-template-columns: 100px 180px 1fr 120px 150px;
+  padding: 1rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-entry-row {
+  display: grid;
+  grid-template-columns: 100px 180px 1fr 120px 150px;
+  padding: 1.2rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 0.9rem;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.log-entry-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.log-time { color: #94a3b8; font-family: monospace; }
+.log-event { font-weight: 600; }
+.log-details { color: #cbd5e1; }
+.log-status { font-weight: 800; font-size: 0.75rem; }
+
+.log-score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+}
+
+/* Console */
+.steering-console-wrapper {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.console-header {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.status-indicator {
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #4ade80;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 10px #4ade80;
+}
+
+.console-body {
+  padding: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.t-prefix { color: #60a5fa; margin-right: 10px; }
+
+@media (max-width: 1024px) {
+  .audit-overview { grid-template-columns: 1fr; }
+  .log-table-header, .log-entry-row {
+    grid-template-columns: 80px 150px 1fr 100px;
+  }
+  .log-score { display: none; }
+}

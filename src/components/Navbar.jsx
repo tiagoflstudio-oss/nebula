@@ -1,8 +1,9 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import './Navbar.css';
 
-const Navbar = ({ session, onHome, selectedPage, onSelectPage }) => {
+const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage }) => {
   const location = useLocation();
 
   const handleLogout = async () => {
@@ -11,8 +12,30 @@ const Navbar = ({ session, onHome, selectedPage, onSelectPage }) => {
 
   return (
     <nav className="navbar">
-      <div className="nav-brand" onClick={onHome} style={{ cursor: 'pointer' }}>
-        Nebula <span>AI</span>
+      <div className="nav-brand-container">
+        <div className="nav-brand" onClick={onHome} style={{ cursor: 'pointer' }}>
+          Nebula <span>AI</span>
+        </div>
+        {(userRole === 'admin' || userRole === 'vip') && (
+          <button 
+            className={`nav-master-btn ${selectedPage === 'master-os' ? 'active' : ''}`}
+            onClick={() => onSelectPage('master-os')}
+            title="Painel Master OS"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            Master OS
+          </button>
+        )}
+        <button 
+          className={`nav-system-btn ${selectedPage === 'picoclaw' ? 'active' : ''}`}
+          onClick={() => onSelectPage('picoclaw')}
+          title="PicoClaw Engine"
+        >
+          <span style={{ fontSize: '1.1rem' }}>🦀</span>
+          PicoClaw
+        </button>
       </div>
       
       <div className="nav-links">

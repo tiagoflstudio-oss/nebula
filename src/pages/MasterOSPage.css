@@ -305,9 +305,10 @@
   border-radius: 50%;
 }
 
-.activity-dot.blue { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
-.activity-dot.purple { background: #8b5cf6; box-shadow: 0 0 8px #8b5cf6; }
+.activity-dot.blue, .activity-dot.usage { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+.activity-dot.purple, .activity-dot.security { background: #8b5cf6; box-shadow: 0 0 8px #8b5cf6; }
 .activity-dot.green { background: #10b981; box-shadow: 0 0 8px #10b981; }
+.activity-dot.error { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
 
 .activity-item p {
   font-size: 0.9rem;
@@ -417,4 +418,61 @@
 
 .btn-connect:hover {
   box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-refresh.spinning span {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Gestão de Clientes Styles */
+.master-clients-list {
+  padding: 20px 0;
+}
+
+.clients-table-wrapper {
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.clients-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.clients-table th {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.clients-table td {
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.btn-edit-quota {
+  padding: 6px 12px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+}
+
+.btn-edit-quota:hover {
+  background: #8b5cf6;
+  color: white;
 }

@@ -1,0 +1,190 @@
+.sandbox-page {
+  padding: 2rem;
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sandbox-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sandbox-header h1 {
+  font-size: 2.2rem;
+  background: linear-gradient(to right, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.sandbox-header p {
+  color: #94a3b8;
+  margin-top: 0.3rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.lang-select {
+  padding: 0.7rem 1.2rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  outline: none;
+  cursor: pointer;
+}
+
+.btn-run {
+  padding: 0.7rem 2rem;
+  background: #60a5fa;
+  color: #0f172a;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.3);
+}
+
+.btn-run:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(96, 165, 250, 0.5);
+  background: #93c5fd;
+}
+
+.btn-run.running {
+  background: #334155;
+  color: #94a3b8;
+  box-shadow: none;
+  cursor: wait;
+}
+
+/* Main Layout */
+.sandbox-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 1.5rem;
+  min-height: 0;
+}
+
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.editor-header {
+  padding: 0.8rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dots { display: flex; gap: 6px; }
+.dots span { width: 10px; height: 10px; border-radius: 50%; }
+.dots span:nth-child(1) { background: #ff5f56; }
+.dots span:nth-child(2) { background: #ffbd2e; }
+.dots span:nth-child(3) { background: #27c93f; }
+
+.file-name { font-size: 0.8rem; color: #64748b; font-family: monospace; }
+
+.code-editor {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  padding: 2rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+/* Terminal */
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  background: #090a0f;
+  border-radius: 20px;
+}
+
+.terminal-header {
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-clear {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.btn-clear:hover { color: white; }
+
+.terminal-body {
+  flex: 1;
+  padding: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.terminal-line { line-height: 1.4; }
+.terminal-line.system { color: #64748b; }
+.terminal-line.command { color: #60a5fa; }
+.terminal-line.stdout { color: #e2e8f0; }
+.terminal-line.result { color: #4ade80; font-weight: 700; padding-top: 4px; }
+.terminal-line.error { color: #f87171; }
+
+.prompt { margin-right: 10px; color: #4ade80; }
+
+.blinking { animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Footer */
+.sandbox-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.engine-status { display: flex; align-items: center; gap: 8px; }
+.status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 8px #4ade80; }
+
+.resource-usage { display: flex; gap: 20px; }
+
+@media (max-width: 1024px) {
+  .sandbox-main { grid-template-columns: 1fr; }
+  .terminal-container { height: 250px; }
+}

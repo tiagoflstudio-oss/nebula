@@ -67,7 +67,8 @@ const QuotaCard = ({ connection, data, loading, error, onRefresh, onDelete, onEd
             {data.quotas.map((quota, idx) => {
               const percentage = quota.percentage !== undefined 
                 ? quota.percentage 
-                : Math.round(((quota.total - quota.used) / quota.total) * 100);
+                : Math.round(((quota.total - quota.used) / (quota.total || 1)) * 100);
+
               const reset = formatTime(quota.resetAt);
 
               return (

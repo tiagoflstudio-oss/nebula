@@ -137,7 +137,8 @@ async function getAntigravityUsage(accessToken) {
       const subInfo = await subRes.json();
       console.log("📦 Resposta loadCodeAssist (mode 1):", subInfo);
       
-      let rawId = subInfo?.cloudaicompanionProject || subInfo?.project;
+      let rawId = subInfo?.cloudaicompanionProject || subInfo?.project || subInfo?.project_id || subInfo?.projectId;
+
       
       // Tentar pegar do allowedTiers se o principal falhar ou for suspeito
       if (!rawId && subInfo.allowedTiers && subInfo.allowedTiers.length > 0) {

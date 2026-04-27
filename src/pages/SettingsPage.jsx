@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { buildAuthUrl } from '../services/oauthService';
-import MasterOS from '../components/MasterOS';
 
 const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalConfig }) => {
   const [activeSection, setActiveSection] = useState('geral');
@@ -41,10 +40,10 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
     try {
       const { error } = await supabase
         .from('provider_connections')
-        .insert([{ 
-          ...newConn, 
+        .insert([{
+          ...newConn,
           user_id: session?.user?.id,
-          is_active: true 
+          is_active: true
         }]);
       if (error) throw error;
       showToast("Conexão adicionada!", "success");
@@ -84,7 +83,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
       const redirectUri = window.location.origin + '/callback'; // Simulated redirect
       const state = Math.random().toString(36).substring(7);
       const url = buildAuthUrl(newConn.provider, null, redirectUri, state); // Service uses hardcoded IDs now
-      
+
       // Open in new tab
       window.open(url, '_blank');
       showToast("Janela de autorização aberta! Após autorizar, cole o código abaixo.", "info");
@@ -104,7 +103,6 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
     { id: 'conta', label: 'Conta', icon: '👤' },
     ...(userRole === 'admin' || userRole === 'vip' ? [
       { id: 'ia-engine', label: 'IA Engine', icon: '🧠' },
-      { id: 'master-os', label: 'Master OS', icon: '🖥️' },
       { id: 'ia-global', label: 'IA Global (Mestre)', icon: '🌐' }
     ] : []),
     { id: 'integracoes', label: 'Integrações de API', icon: '🔌' },
@@ -115,7 +113,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
   const IntegrationRow = ({ label, description, value, field, placeholder, onTest, setConfig, config }) => {
     const [showKey, setShowKey] = useState(false);
     const [syncStatus, setSyncStatus] = useState('idle'); // idle, loading, success, error
-    
+
     const handleSync = async () => {
       setSyncStatus('loading');
       try {
@@ -141,34 +139,34 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
         </div>
         <div className="integration-input-group">
           <div className="input-with-eye">
-            <input 
-              type={showKey ? "text" : "password"} 
+            <input
+              type={showKey ? "text" : "password"}
               className="glass-input api-key-input"
-              value={value || ''} 
+              value={value || ''}
               onChange={(e) => {
                 const val = e.target.value;
-                setConfig(prev => ({...prev, [field]: val}));
+                setConfig(prev => ({ ...prev, [field]: val }));
                 setSyncStatus('idle');
               }}
               placeholder={placeholder || "Inserir API Key..."}
               autoComplete="new-password"
             />
-            <button 
-              className="eye-btn" 
+            <button
+              className="eye-btn"
               onClick={() => setShowKey(!showKey)}
               title={showKey ? "Esconder" : "Mostrar"}
             >
               {showKey ? '👁️‍🗨️' : '👁️'}
             </button>
           </div>
-          <button 
+          <button
             className={`test-api-btn glass sync-mode ${syncStatus}`}
             onClick={handleSync}
             disabled={syncStatus === 'loading'}
           >
-            {syncStatus === 'loading' ? '...' : 
-             syncStatus === 'success' ? 'Sincronizado ✅' : 
-             syncStatus === 'error' ? 'Erro ❌' : 'Sincronizar'}
+            {syncStatus === 'loading' ? '...' :
+              syncStatus === 'success' ? 'Sincronizado ✅' :
+                syncStatus === 'error' ? 'Erro ❌' : 'Sincronizar'}
           </button>
         </div>
       </div>
@@ -201,7 +199,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
           <main className="settings-content">
             <div className="content-section">
               <h2>{menuItems.find(i => i.id === activeSection)?.label}</h2>
-              
+
               {activeSection === 'geral' && (
                 <div className="settings-group">
                   <div className="setting-row">
@@ -244,14 +242,14 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         )}
                         <label htmlFor="photo-upload" className="photo-edit-btn" title="Alterar Foto">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
                           </svg>
                         </label>
-                        <input 
-                          id="photo-upload" 
-                          type="file" 
-                          accept="image/*" 
-                          style={{ display: 'none' }} 
+                        <input
+                          id="photo-upload"
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
                           onChange={(e) => {
                             const file = e.target.files[0];
                             if (file) {
@@ -265,7 +263,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         />
                       </div>
                     </div>
-                    
+
                     <div className="account-details-grid">
                       <div className="detail-item">
                         <label>Usuário</label>
@@ -296,8 +294,8 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
               {activeSection === 'integracoes' && (
                 <div className="settings-group fade-in">
                   <div className="integrations-list">
-                    <IntegrationRow 
-                      label="OpenAI" 
+                    <IntegrationRow
+                      label="OpenAI"
                       description="Para GPT-4o, GPT-3.5 Turbo e DALL-E."
                       value={config.openai_key}
                       field="openai_key"
@@ -319,7 +317,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                               .map(m => m.id)
                               .filter(id => id.startsWith('gpt') || id.includes('o1'))
                               .sort();
-                            setConfig(prev => ({...prev, fetched_openai_models: models, openai_key: key}));
+                            setConfig(prev => ({ ...prev, fetched_openai_models: models, openai_key: key }));
                             showToast(`OpenAI ativa! ${models.length} modelos detectados. ✅`, "success");
                             return true;
                           }
@@ -331,14 +329,14 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         } catch (e) {
                           showToast(`CORS bloqueou fetch direto. Usando lista segura.`, "info");
                           const models = ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
-                          setConfig(prev => ({...prev, fetched_openai_models: models, openai_key: key}));
+                          setConfig(prev => ({ ...prev, fetched_openai_models: models, openai_key: key }));
                           showToast("OpenAI pronta para uso! ✅", "success");
                           return true;
                         }
                       }}
                     />
-                    <IntegrationRow 
-                      label="Anthropic" 
+                    <IntegrationRow
+                      label="Anthropic"
                       description="Para modelos Claude 3.5 Sonnet e Opus."
                       value={config.anthropic_key}
                       field="anthropic_key"
@@ -346,13 +344,13 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       setConfig={setConfig}
                       onTest={() => {
                         const models = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'];
-                        setConfig(prev => ({...prev, fetched_anthropic_models: models}));
+                        setConfig(prev => ({ ...prev, fetched_anthropic_models: models }));
                         showToast("Anthropic: 3 modelos sincronizados. ✨", "success");
                         return true;
                       }}
                     />
-                    <IntegrationRow 
-                      label="OpenRouter" 
+                    <IntegrationRow
+                      label="OpenRouter"
                       description="Acesso a centenas de modelos (Llama, Mistral, Qwen)."
                       value={config.openrouter_key}
                       field="openrouter_key"
@@ -373,7 +371,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                             const models = data.data
                               .map(m => m.id)
                               .slice(0, 20); // Limita aos top 20 para o UI não explodir
-                            setConfig(prev => ({...prev, fetched_openrouter_models: models, openrouter_key: key}));
+                            setConfig(prev => ({ ...prev, fetched_openrouter_models: models, openrouter_key: key }));
                             showToast(`OpenRouter ativo! ${models.length} modelos detectados. ✅`, "success");
                             return true;
                           } else {
@@ -381,15 +379,15 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                             return false;
                           }
                         } catch (e) {
-                           const models = ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct', 'google/gemini-pro-1.5'];
-                           setConfig(prev => ({...prev, fetched_openrouter_models: models, openrouter_key: key}));
-                           showToast("OpenRouter pronto com lista básica! ✅", "success");
-                           return true;
+                          const models = ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct', 'google/gemini-pro-1.5'];
+                          setConfig(prev => ({ ...prev, fetched_openrouter_models: models, openrouter_key: key }));
+                          showToast("OpenRouter pronto com lista básica! ✅", "success");
+                          return true;
                         }
                       }}
                     />
-                    <IntegrationRow 
-                      label="Google Cloud" 
+                    <IntegrationRow
+                      label="Google Cloud"
                       description="Integração com Gemini Pro e Ultra."
                       value={config.google_key}
                       field="google_key"
@@ -397,13 +395,13 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       setConfig={setConfig}
                       onTest={() => {
                         const models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'];
-                        setConfig(prev => ({...prev, fetched_google_models: models}));
+                        setConfig(prev => ({ ...prev, fetched_google_models: models }));
                         showToast("Google Gemini: Modelos sincronizados. 🚀", "success");
                         return true;
                       }}
                     />
-                    <IntegrationRow 
-                      label="OpenCode" 
+                    <IntegrationRow
+                      label="OpenCode"
                       description="Motor especializado em programação."
                       value={config.opencode_key}
                       field="opencode_key"
@@ -415,177 +413,26 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       }}
                     />
                   </div>
-                  
-                    <div className="settings-footer">
-                      <button 
-                        className="sync-btn-premium"
-                        onClick={async () => {
-                          showToast("Gravando motores no Supabase...", "info");
-                          const success = await onSave(config);
-                          if (success) {
-                            showToast("Motores salvos com sucesso! 🌌", "success");
-                          } else {
-                            showToast("Erro ao salvar motores.", "error");
-                          }
-                        }}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                          <polyline points="17 21 17 13 7 13 7 21" />
-                          <polyline points="7 3 7 8 15 8" />
-                        </svg>
-                        Salvar Motores
-                      </button>
-                    </div>
-                </div>
-              )}
-              {activeSection === 'ia-global' && (
-                <div className="settings-group fade-in">
-                  <div className="global-ia-hero glass">
-                    <div className="global-ia-icon">🌐</div>
-                    <div className="global-ia-status">
-                      <h3>Cérebro Mestre da Nebula</h3>
-                      <p>Defina a inteligência central que comandará todo o ecossistema.</p>
-                    </div>
-                    <div className="global-ia-toggle-wrapper">
-                      <div 
-                        className={`mentor-toggle ${config.global_ia_enabled ? 'active' : ''}`}
-                        onClick={() => setConfig({...config, global_ia_enabled: !config.global_ia_enabled})}
-                      >
-                        <div className="toggle-dot"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="setting-row">
-                    <div className="setting-info">
-                      <h3>Provedor Mestre</h3>
-                      <p>Selecione o serviço de IA principal.</p>
-                    </div>
-                    <select 
-                      className="glass-input"
-                      value={config.global_provider || 'openai'}
-                      onChange={(e) => setConfig({...config, global_provider: e.target.value})}
-                    >
-                      <option value="openai">OpenAI (ChatGPT)</option>
-                      <option value="anthropic">Anthropic (Claude)</option>
-                      <option value="google">Google Cloud (Gemini)</option>
-                      <option value="ollama">Ollama (Local)</option>
-                    </select>
-                  </div>
-
-                  <div className="setting-row">
-                    <div className="setting-info">
-                      <h3>API Token (Global)</h3>
-                      <p>Chave de acesso para o provedor mestre.</p>
-                    </div>
-                    <div className="integration-input-group">
-                      <input 
-                        type="password" 
-                        className="glass-input api-key-input"
-                        value={config.global_api_key || ''} 
-                        onChange={(e) => setConfig({...config, global_api_key: e.target.value})}
-                        placeholder="Inserir Token do Provedor Mestre..."
-                      />
-                      <button 
-                        className="test-api-btn glass"
-                        onClick={async () => {
-                          const provider = config.global_provider || 'openai';
-                          const apiKey = config.global_api_key;
-
-                          if (!apiKey && provider !== 'ollama') {
-                            return showToast("Insira o token para sincronizar!", "error");
-                          }
-
-                          showToast(`Sincronizando modelos ${provider.toUpperCase()}...`, "info");
-                          
-                          try {
-                            let models = [];
-                            
-                            // Tentativa de Fetch Real para OpenAI
-                            if (provider === 'openai') {
-                              try {
-                                const res = await fetch('https://api.openai.com/v1/models', {
-                                  headers: { 'Authorization': `Bearer ${apiKey}` }
-                                });
-                                if (res.ok) {
-                                  const data = await res.json();
-                                  models = data.data
-                                    .map(m => m.id)
-                                    .filter(id => id.startsWith('gpt'))
-                                    .sort();
-                                }
-                              } catch (e) {
-                                console.warn("CORS bloqueou fetch direto. Usando lista de fallback segura.");
-                              }
-                              
-                              // Fallback se o fetch falhar ou for bloqueado
-                              if (models.length === 0) {
-                                models = ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
-                              }
-                            } else if (provider === 'anthropic') {
-                              models = ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'];
-                            } else if (provider === 'google') {
-                              models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'];
-                            } else if (provider === 'ollama') {
-                              models = ['llama3', 'mistral', 'phi3', 'qwen'];
-                            }
-                            
-                            // Atualiza os modelos disponíveis e limpa o modelo selecionado se não estiver na nova lista
-                            setConfig({
-                              ...config, 
-                              fetched_global_models: models,
-                              global_model: models.includes(config.global_model) ? config.global_model : ''
-                            });
-                            
-                            showToast(`${models.length} modelos de ${provider.toUpperCase()} prontos! ✅`, "success");
-                          } catch (e) {
-                            showToast("Falha crítica na sincronização.", "error");
-                          }
-                        }}
-                      >
-                        Sincronizar
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="setting-row">
-                    <div className="setting-info">
-                      <h3>Modelo de Inteligência</h3>
-                      <p>Escolha o modelo após sincronizar a API.</p>
-                    </div>
-                    <select 
-                      className="glass-input"
-                      value={config.global_model || ''}
-                      onChange={(e) => setConfig({...config, global_model: e.target.value})}
-                    >
-                      <option value="">{config.fetched_global_models ? "Selecionar Modelo Sincronizado..." : "Sincronize a API primeiro"}</option>
-                      {config.fetched_global_models?.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                      {!config.fetched_global_models && config.global_model && (
-                         <option value={config.global_model}>{config.global_model} (Salvo)</option>
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="global-ia-tip">
-                    <div className="tip-icon">💡</div>
-                    <p>Status: {config.global_ia_enabled ? <strong>ATIVO</strong> : "Inativo"}. Motor: <strong>{config.global_provider?.toUpperCase()}</strong> | Modelo: <strong>{config.global_model || "Nenhum"}</strong></p>
-                  </div>
 
                   <div className="settings-footer">
-                    <button 
-                      className="save-btn-master"
+                    <button
+                      className="sync-btn-premium"
                       onClick={async () => {
-                        if (!config.global_model) return showToast("Selecione um modelo antes de salvar!", "error");
-                        showToast("Gravando Cérebro Mestre no Supabase...", "info");
+                        showToast("Gravando motores no Supabase...", "info");
                         const success = await onSave(config);
-                        if (success) showToast("Configuração Mestre Salva com Sucesso! 🌌", "success");
+                        if (success) {
+                          showToast("Motores salvos com sucesso! 🌌", "success");
+                        } else {
+                          showToast("Erro ao salvar motores.", "error");
+                        }
                       }}
                     >
-                      <span className="material-symbols-outlined">save</span>
-                      Salvar Configuração Mestre
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                      </svg>
+                      Salvar Motores
                     </button>
                   </div>
                 </div>
@@ -835,8 +682,6 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                 </div>
               )}
 
-              {activeSection === 'master-os' && <MasterOS />}
-
               {activeSection === 'ia-global' && (userRole === 'admin' || userRole === 'vip') && (
                 <div className="settings-group fade-in">
                   <div className="master-ia-header glass">
@@ -940,7 +785,9 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                 </div>
               )}
 
-              {!['geral', 'conta', 'ia-engine', 'master-os', 'integracoes', 'ia-global'].includes(activeSection) && (
+
+
+              {!['geral', 'conta', 'ia-engine', 'master-os', 'integracoes', 'ia-global', 'nebula-code'].includes(activeSection) && (
                 <div className="settings-placeholder">
                   <p>As configurações de <strong>{activeSection}</strong> estarão disponíveis em breve.</p>
                 </div>
@@ -968,22 +815,22 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
             <h3>Nova Conexão de Conta</h3>
             <div className="modal-form">
               <div className="mode-selector glass">
-                <button 
-                  className={!isAutoMode ? 'active' : ''} 
+                <button
+                  className={!isAutoMode ? 'active' : ''}
                   onClick={() => setIsAutoMode(false)}
                 >Manual</button>
-                <button 
-                  className={isAutoMode ? 'active' : ''} 
+                <button
+                  className={isAutoMode ? 'active' : ''}
                   onClick={() => setIsAutoMode(true)}
                 >Automático (OAuth)</button>
               </div>
 
               <div className="form-group">
                 <label>Provedor</label>
-                <select 
-                  className="glass-input" 
+                <select
+                  className="glass-input"
                   value={newConn.provider}
-                  onChange={(e) => setNewConn({...newConn, provider: e.target.value})}
+                  onChange={(e) => setNewConn({ ...newConn, provider: e.target.value })}
                 >
                   <option value="antigravity">Antigravity</option>
                   <option value="github">GitHub Copilot</option>
@@ -995,7 +842,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
               {isAutoMode ? (
                 <div className="auto-mode-info fade-in">
                   <p>Clique abaixo para autorizar o acesso à sua conta. Você será redirecionado para o Google.</p>
-                  
+
                   {!isWaitingForCode ? (
                     <button className="btn-premium-action w-full" onClick={handleOAuthStart}>
                       <span className="material-symbols-outlined">link</span>
@@ -1005,9 +852,9 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                     <div className="code-input-area fade-in">
                       <div className="form-group">
                         <label>Código de Autorização</label>
-                        <input 
-                          type="text" 
-                          className="glass-input" 
+                        <input
+                          type="text"
+                          className="glass-input"
                           placeholder="Cole o código aqui..."
                           value={oauthCode}
                           onChange={(e) => setOauthCode(e.target.value)}
@@ -1025,22 +872,22 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                 <div className="manual-mode-form fade-in">
                   <div className="form-group">
                     <label>Nome da Conta (E-mail)</label>
-                    <input 
-                      type="text" 
-                      className="glass-input" 
+                    <input
+                      type="text"
+                      className="glass-input"
                       placeholder="ex: conta@gmail.com"
                       value={newConn.name}
-                      onChange={(e) => setNewConn({...newConn, name: e.target.value})}
+                      onChange={(e) => setNewConn({ ...newConn, name: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
                     <label>Access Token</label>
-                    <input 
-                      type="password" 
-                      className="glass-input" 
+                    <input
+                      type="password"
+                      className="glass-input"
                       placeholder="Cole seu token aqui..."
                       value={newConn.access_token}
-                      onChange={(e) => setNewConn({...newConn, access_token: e.target.value})}
+                      onChange={(e) => setNewConn({ ...newConn, access_token: e.target.value })}
                     />
                   </div>
                 </div>

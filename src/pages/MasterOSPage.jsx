@@ -1,44 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { masterService } from '../services/masterService';
 import './MasterOSPage.css';
 
-const MasterOSPage = ({ config, setConfig, onSave, masterStats, globalSettings }) => {
+const MasterOSPage = ({ config, setConfig, onSave, globalSettings }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [loading, setLoading] = useState(true);
+  const [realStats, setRealStats] = useState({
+    activeConnections: 0,
+    clientCount: 0,
+    totalTokens24h: 0,
+    performance: '100%'
+  });
+  const [providers, setProviders] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [providerTokens, setProviderTokens] = useState({});
 
-  const getActiveConnectionsCount = () => {
-    let count = 0;
-    if (globalSettings?.openai_key) count++;
-    if (globalSettings?.anthropic_key) count++;
-    if (globalSettings?.google_key) count++;
-    return count;
+  useEffect(() => {
+    if (activeTab === 'dashboard') fetchDashboardData();
+    if (activeTab === 'clientes') fetchClients();
+  }, [activeTab]);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [stats, provs, acts] = await Promise.all([
+        masterService.getGlobalStats(),
+        masterService.getProvidersStatus(),
+        masterService.getRecentActivity()
+      ]);
+      
+      // Sincroniza visualmente com as chaves configuradas no Cérebro Mestre (IA Global)
+      const mergedProvs = provs.map(p => {
+        const isGlobalMaster = globalSettings?.global_api_key && globalSettings?.global_provider === p.id;
+        const hasDirectKey = globalSettings?.[`${p.id}_key` || ''];
+        
+        if (isGlobalMaster || hasDirectKey) {
+          return { ...p, status: 'online' };
+        }
+        return p;
+      });
+      
+      if (stats) setRealStats(stats);
+      setProviders(mergedProvs);
+      setActivities(acts);
+    } catch (err) {
+      console.error('Erro ao carregar dashboard:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const stats = [
-    { label: 'Conexões Ativas', value: getActiveConnectionsCount().toString(), icon: 'link', color: '#10b981' },
-    { label: 'Clientes Master', value: (masterStats?.userCount || 0).toString(), icon: 'group', color: '#8b5cf6' },
-    { label: 'Uso de Tokens (24h)', value: 'Ativo', icon: 'database', color: '#3b82f6' },
-    { label: 'Performance Global', value: '100%', icon: 'bolt', color: '#fbbf24' },
-  ];
+  const fetchClients = async () => {
+    setLoading(true);
+    const data = await masterService.getClients();
+    setClients(data);
+    setLoading(false);
+  };
 
-  const providers = [
-    { 
-      id: 'openai', 
-      name: 'OpenAI', 
-      status: globalSettings?.openai_key ? 'online' : 'offline', 
-      models: globalSettings?.fetched_openai_models || [] 
-    },
-    { 
-      id: 'anthropic', 
-      name: 'Anthropic', 
-      status: globalSettings?.anthropic_key ? 'online' : 'offline', 
-      models: globalSettings?.fetched_anthropic_models || [] 
-    },
-    { 
-      id: 'google', 
-      name: 'Google Gemini', 
-      status: globalSettings?.google_key ? 'online' : 'offline', 
-      models: globalSettings?.fetched_google_models || [] 
-    },
-    { id: 'opencode', name: 'OpenCode', status: 'offline', models: [] },
+  const handleSaveConnection = async (provider) => {
+    const token = providerTokens[provider];
+    if (!token) return alert('Insira um token válido');
+    
+    setLoading(true);
+    const res = await masterService.saveProviderConnection(provider, token);
+    if (res.success) {
+      alert('Conexão salva com sucesso!');
+      fetchDashboardData();
+    } else {
+      alert('Erro: ' + res.error);
+    }
+    setLoading(false);
+  };
+
+  const handleUpdateLimit = async (userId, currentLimit) => {
+    const newLimit = prompt('Novo limite de tokens:', currentLimit);
+    if (newLimit === null) return;
+    
+    setLoading(true);
+    const res = await masterService.updateUserQuota(userId, parseInt(newLimit));
+    if (res.success) {
+      fetchClients();
+    } else {
+      alert('Erro ao atualizar limite');
+    }
+    setLoading(false);
+  };
+
+  const statsDisplay = [
+    { label: 'Conexões Ativas', value: realStats.activeConnections.toString(), icon: 'link', color: '#10b981' },
+    { label: 'Clientes Master', value: realStats.clientCount.toString(), icon: 'group', color: '#8b5cf6' },
+    { label: 'Uso de Tokens (24h)', value: realStats.totalTokens24h.toLocaleString(), icon: 'database', color: '#3b82f6' },
+    { label: 'Performance Global', value: realStats.performance, icon: 'bolt', color: '#fbbf24' },
   ];
 
   return (
@@ -86,11 +139,19 @@ const MasterOSPage = ({ config, setConfig, onSave, masterStats, globalSettings }
         <header className="master-content-header">
           <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} <span>Master</span></h2>
           <div className="header-actions">
-            <button className="btn-refresh glass">
+            <button 
+              className={`btn-refresh glass ${loading ? 'spinning' : ''}`} 
+              onClick={fetchDashboardData}
+              disabled={loading}
+            >
               <span className="material-symbols-outlined">refresh</span>
             </button>
-            <button className="btn-save-global glass">
-              Sincronizar Tudo
+            <button 
+              className="btn-save-global glass" 
+              onClick={fetchDashboardData}
+              disabled={loading}
+            >
+              {loading ? 'Sincronizando...' : 'Sincronizar Tudo'}
             </button>
           </div>
         </header>
@@ -98,13 +159,13 @@ const MasterOSPage = ({ config, setConfig, onSave, masterStats, globalSettings }
         {activeTab === 'dashboard' && (
           <div className="master-dashboard fade-in">
             <div className="stats-grid">
-              {stats.map((stat, i) => (
+              {statsDisplay.map((stat, i) => (
                 <div key={i} className="stat-card glass" style={{ borderBottom: `3px solid ${stat.color}` }}>
                   <div className="stat-icon" style={{ color: stat.color }}>
                     <span className="material-symbols-outlined">{stat.icon}</span>
                   </div>
                   <div className="stat-info">
-                    <h3>{stat.value}</h3>
+                    <h3>{loading ? '...' : stat.value}</h3>
                     <p>{stat.label}</p>
                   </div>
                 </div>
@@ -135,21 +196,17 @@ const MasterOSPage = ({ config, setConfig, onSave, masterStats, globalSettings }
                   <h3>Atividade Recente</h3>
                 </div>
                 <div className="activity-feed">
-                  <div className="activity-item">
-                    <div className="activity-dot blue"></div>
-                    <p>GPT-4o sincronizado via Master API</p>
-                    <small>Há 2 minutos</small>
-                  </div>
-                  <div className="activity-item">
-                    <div className="activity-dot purple"></div>
-                    <p>Novo cliente "Mestre Clientes" adicionado</p>
-                    <small>Há 15 minutos</small>
-                  </div>
-                  <div className="activity-item">
-                    <div className="activity-dot green"></div>
-                    <p>Configuração Global salva com sucesso</p>
-                    <small>Há 45 minutos</small>
-                  </div>
+                  {activities.length === 0 ? (
+                    <p className="empty-activity">Nenhuma atividade recente.</p>
+                  ) : (
+                    activities.map((act) => (
+                      <div key={act.id} className="activity-item">
+                        <div className={`activity-dot ${act.type}`}></div>
+                        <p>{act.message}</p>
+                        <small>{new Date(act.timestamp).toLocaleTimeString()}</small>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -162,38 +219,73 @@ const MasterOSPage = ({ config, setConfig, onSave, masterStats, globalSettings }
                 <p>Gerencie todas as suas inteligências de forma centralizada.</p>
              </div>
              <div className="connections-grid">
-                {providers.map(p => (
-                  <div key={p.id} className="connection-card glass">
-                    <div className="c-header">
-                      <div className="c-icon">🌐</div>
-                      <div className="c-title">
-                        <h3>{p.name}</h3>
-                        <span className={`status-pill ${p.status}`}>{p.status}</span>
-                      </div>
-                    </div>
-                    <div className="c-body">
-                      <input type="password" placeholder="API Token..." className="glass-input" />
-                      <div className="c-models">
-                        {p.models.map(m => <span key={m} className="model-tag">{m}</span>)}
-                      </div>
-                    </div>
-                    <div className="c-footer">
-                      <button className="btn-test">Testar</button>
-                      <button className="btn-connect">Conectar</button>
-                    </div>
-                  </div>
-                ))}
+                 {providers.map(p => (
+                   <div key={p.id} className="connection-card glass">
+                     <div className="c-header">
+                       <div className="c-icon">🌐</div>
+                       <div className="c-title">
+                         <h3>{p.name}</h3>
+                         <span className={`status-pill ${p.status}`}>{p.status}</span>
+                       </div>
+                     </div>
+                     <div className="c-body">
+                       <input 
+                         type="password" 
+                         placeholder="API Token..." 
+                         className="glass-input" 
+                         value={providerTokens[p.id] || ''}
+                         onChange={(e) => setProviderTokens(prev => ({ ...prev, [p.id]: e.target.value }))}
+                       />
+                       <div className="c-models">
+                         {p.models.map(m => <span key={m} className="model-tag">{m}</span>)}
+                       </div>
+                     </div>
+                     <div className="c-footer">
+                       <button className="btn-test">Testar</button>
+                       <button className="btn-connect" onClick={() => handleSaveConnection(p.id)} disabled={loading}>
+                         {loading ? 'Salvando...' : 'Conectar'}
+                       </button>
+                     </div>
+                   </div>
+                 ))}
              </div>
           </div>
         )}
 
-        {activeTab === 'clientes' && (
-          <div className="master-placeholder glass fade-in">
-            <span className="material-symbols-outlined large-icon">construction</span>
-            <h3>Módulo de Clientes em Construção</h3>
-            <p>Em breve, você terá o controle total da sua base de clientes aqui.</p>
-          </div>
-        )}
+         {activeTab === 'clientes' && (
+           <div className="master-clients-list fade-in">
+             <div className="section-header">
+               <h3>Gestão de Usuários e Cotas</h3>
+               <button className="btn-refresh" onClick={fetchClients}><span className="material-symbols-outlined">sync</span></button>
+             </div>
+             <div className="clients-table-wrapper glass">
+               <table className="clients-table">
+                 <thead>
+                   <tr>
+                     <th>ID do Usuário</th>
+                     <th>Tokens Usados</th>
+                     <th>Limite Total</th>
+                     <th>Ações</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {clients.map(client => (
+                     <tr key={client.user_id}>
+                       <td><small>{client.user_id}</small></td>
+                       <td><strong>{client.used_tokens.toLocaleString()}</strong></td>
+                       <td>{client.total_limit.toLocaleString()}</td>
+                       <td>
+                         <button className="btn-edit-quota" onClick={() => handleUpdateLimit(client.user_id, client.total_limit)}>
+                           Alterar Limite
+                         </button>
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+           </div>
+         )}
 
         {activeTab === 'planos' && (
           <div className="master-placeholder glass fade-in">

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { trackUsage } from '../services/usageService';
+import { skillService } from '../services/skillService';
 
 const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalSettings }) => {
   const [messages, setMessages] = useState([
@@ -7,6 +9,9 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [skills, setSkills] = useState([]);
+  const [showSkillsMenu, setShowSkillsMenu] = useState(false);
+  const [placeholderText, setPlaceholderText] = useState('|');
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [selectorMode, setSelectorMode] = useState(ollamaConfig.global_ia_enabled ? 'global' : 'local');
   const [isListening, setIsListening] = useState(false);
@@ -39,7 +44,26 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
         setIsListening(false);
       };
     }
+
+    // Carregar Skills do Banco
+    fetchSkills();
+
+    // Efeito de Placeholder Piscando
+    const interval = setInterval(() => {
+      setPlaceholderText(prev => prev === '|' ? ' ' : '|');
+    }, 600);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchSkills = async () => {
+    try {
+      const data = await skillService.getSkills();
+      setSkills(data || []);
+    } catch (err) {
+      console.error("Erro ao carregar skills no chat:", err);
+    }
+  };
 
   const toggleListening = () => {
     if (isListening) {
@@ -191,8 +215,15 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
 
       const systemMessage = {
         role: 'system',
-        content: `Você é o Nebula AI, uma inteligência artificial minimalista e de alta performance. 
+        content: `Você é o Nebula AI, uma inteligência artificial minimalista e de alta performance instalada no Nebula OS. 
         Sua missão é ajudar o usuário com código, design, gestão de clientes e auxílio na Vida Burocrática Brasileira.${specializedContext}${projectContext}
+
+        HABILIDADES DISPONÍVEIS (SKILLS):
+        ${skills.map(s => `- /${s.name.toLowerCase().replace(/\s+/g, '')}: ${s.description} (Executa: ${s.command_template})`).join('\n')}
+
+        INSTRUÇÕES DE EXECUÇÃO:
+        - Quando o usuário usar um comando começado por '/', ou quando você perceber que uma das habilidades acima é necessária para resolver o problema, você deve responder confirmando que vai executar a ação.
+        - Exemplo: "Entendido! Vou executar o [Nome da Skill] agora."
 
         REGRAS DE FORMATAÇÃO (OBRIGATÓRIO):
         1. Títulos de seção: sempre seguidos de uma linha em branco.
@@ -213,6 +244,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       ];
 
       let assistantContent = '';
+      let usageData = null;
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       if (provider === 'anthropic') {
@@ -255,6 +287,16 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                     newMessages[newMessages.length - 1].content = assistantContent;
                     return newMessages;
                   });
+                } else if (json.type === 'message_delta' && json.usage) {
+                  usageData = {
+                    prompt_tokens: json.usage.input_tokens || 0,
+                    completion_tokens: json.usage.output_tokens || 0
+                  };
+                } else if (json.type === 'message_start' && json.message?.usage) {
+                  usageData = {
+                    prompt_tokens: json.message.usage.input_tokens || 0,
+                    completion_tokens: json.message.usage.output_tokens || 0
+                  };
                 }
               } catch (e) {}
             }
@@ -291,6 +333,15 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                 const json = JSON.parse(cleanLine);
                 const text = json.candidates[0]?.content?.parts[0]?.text || '';
                 assistantContent += text;
+                
+                // Google usage metadata
+                if (json.usageMetadata) {
+                   usageData = {
+                     prompt_tokens: json.usageMetadata.promptTokenCount || 0,
+                     completion_tokens: json.usageMetadata.candidatesTokenCount || 0
+                   };
+                }
+
                 setMessages(prev => {
                   const newMessages = [...prev];
                   newMessages[newMessages.length - 1].content = assistantContent;
@@ -311,7 +362,8 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
           body: JSON.stringify({
             model: activeModel,
             messages: payloadMessages,
-            stream: true
+            stream: true,
+            stream_options: { include_usage: true }
           })
         });
 
@@ -334,6 +386,13 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                 const json = JSON.parse(line.substring(6));
                 const text = json.choices[0]?.delta?.content || '';
                 assistantContent += text;
+                
+                if (json.usage) {
+                  usageData = {
+                    prompt_tokens: json.usage.prompt_tokens || 0,
+                    completion_tokens: json.usage.completion_tokens || 0
+                  };
+                }
                 setMessages(prev => {
                   const newMessages = [...prev];
                   newMessages[newMessages.length - 1].content = assistantContent;
@@ -379,6 +438,13 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                 const json = JSON.parse(line.substring(6));
                 const text = json.choices[0]?.delta?.content || '';
                 assistantContent += text;
+
+                if (json.usage) {
+                  usageData = {
+                    prompt_tokens: json.usage.prompt_tokens || 0,
+                    completion_tokens: json.usage.completion_tokens || 0
+                  };
+                }
                 setMessages(prev => {
                   const newMessages = [...prev];
                   newMessages[newMessages.length - 1].content = assistantContent;
@@ -428,6 +494,11 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       }
 
       await saveMessage('assistant', assistantContent, currentChatId);
+
+      // Track usage in background
+      if (usageData && session?.user?.id) {
+        trackUsage(session.user.id, provider, activeModel, usageData);
+      }
 
     } catch (error) {
       console.error('❌ [Nebula Engine Error]:', error);
@@ -575,11 +646,32 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
               <input
                 type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setInput(val);
+                  setShowSkillsMenu(val.endsWith('/'));
+                }}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Digite / para habilidades"
+                placeholder={placeholderText}
                 autoFocus
               />
+              {showSkillsMenu && (
+                <div className="skills-command-menu glass fade-in">
+                  {skills.map(s => (
+                    <div 
+                      key={s.id} 
+                      className="skill-option"
+                      onClick={() => {
+                        setInput(prev => prev.replace(/\/$/, '') + `/${s.name.toLowerCase().replace(/\s+/g, '')} `);
+                        setShowSkillsMenu(false);
+                      }}
+                    >
+                      <span className="skill-cmd">/{s.name.toLowerCase().replace(/\s+/g, '')}</span>
+                      <span className="skill-desc">{s.description.substring(0, 40)}...</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="chat-input-controls">
                 <div className="controls-left">
                   <button className="input-action-btn" title="Anexar arquivo">
@@ -696,10 +788,15 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
 
             <div className="skills-row">
               <button className="skill-btn"><span className="icon">{"</>"}</span> Código</button>
-              <button className="skill-btn" onClick={() => setInput("Analisar Contrato: Preciso de ajuda para interpretar este contrato de aluguel/financiamento...")}><span className="icon">📄</span> Contratos</button>
-              <button className="skill-btn" onClick={() => setInput("Burocracia: Recebi uma notificação (Receita/DETRAN/INSS) e preciso entender o que fazer...")}><span className="icon">🏛️</span> Governo</button>
-              <button className="skill-btn" onClick={() => setInput("Direitos Trabalhistas: Me explique em linguagem simples meus direitos nesta situação...")}><span className="icon">⚖️</span> Trabalhista</button>
-              <button className="skill-btn" onClick={() => setInput("Reclamação: Me ajude a escrever um recurso para o Procon/Reclame Aqui...")}><span className="icon">✍️</span> Reclamações</button>
+              {skills.slice(0, 4).map(s => (
+                <button 
+                  key={s.id} 
+                  className="skill-btn" 
+                  onClick={() => setInput(`/${s.name.toLowerCase().replace(/\s+/g, '')} `)}
+                >
+                  <span className="icon">⚡</span> {s.name}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -735,11 +832,31 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setInput(val);
+                setShowSkillsMenu(val.endsWith('/'));
+              }}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="digite"
               autoFocus
             />
+            {showSkillsMenu && (
+              <div className="skills-command-menu glass bottom-mode fade-in">
+                {skills.map(s => (
+                  <div 
+                    key={s.id} 
+                    className="skill-option"
+                    onClick={() => {
+                      setInput(prev => prev.replace(/\/$/, '') + `/${s.name.toLowerCase().replace(/\s+/g, '')} `);
+                      setShowSkillsMenu(false);
+                    }}
+                  >
+                    <span className="skill-cmd">/{s.name.toLowerCase().replace(/\s+/g, '')}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="bottom-input-actions">
               <button 
                 className={`voice-btn-mini ${isListening ? 'listening' : ''}`} 

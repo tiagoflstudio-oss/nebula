@@ -19,6 +19,12 @@ import SupportPage from './pages/SupportPage';
 import QuotaPage from './pages/QuotaPage';
 import Modal from './components/Modal';
 import MasterOSPage from './pages/MasterOSPage';
+import PicoClawPage from './pages/PicoClawPage';
+import CronManagerPage from './pages/CronManagerPage';
+import AuditHubPage from './pages/AuditHubPage';
+import CodeSandboxPage from './pages/CodeSandboxPage';
+import MCPExplorerPage from './pages/MCPExplorerPage';
+import OrchestrationHubPage from './pages/OrchestrationHubPage';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -214,7 +220,20 @@ function App() {
         .eq('id', session.user.id);
       
       if (error) throw error;
-      console.log("✅ Nebula: Configurações salvas no Supabase");
+
+      // Sincroniza com a infraestrutura do Master OS
+      if (newConfig.global_api_key && newConfig.global_provider && session?.user?.id) {
+        const { masterService } = await import('./services/masterService');
+        await masterService.saveProviderConnection(
+          session.user.id,
+          newConfig.global_provider, 
+          newConfig.global_api_key,
+          newConfig.fetched_global_models || []
+        );
+      }
+      
+      setGlobalSettings(newConfig);
+      console.log("✅ Nebula: Configurações e Infraestrutura sincronizadas");
       return true;
     } catch (error) {
       console.error("❌ Nebula: Erro ao salvar config:", error.message);
@@ -395,6 +414,12 @@ function App() {
     if (selectedPage === 'support') return <SupportPage config={config} session={session} />;
     if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings')} />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;
+    if (selectedPage === 'picoclaw') return <PicoClawPage config={config} session={session} onSelectPage={setSelectedPage} />;
+    if (selectedPage === 'cron') return <CronManagerPage config={config} />;
+    if (selectedPage === 'audit') return <AuditHubPage config={config} />;
+    if (selectedPage === 'sandbox') return <CodeSandboxPage config={config} />;
+    if (selectedPage === 'mcp') return <MCPExplorerPage config={config} />;
+    if (selectedPage === 'orch') return <OrchestrationHubPage config={config} />;
     if (selectedPage === 'master-os') {
       return (
         <MasterOSPage 
@@ -498,6 +523,7 @@ function App() {
             <div className="main-wrapper">
               <Navbar 
                 session={session} 
+                userRole={userRole}
                 selectedPage={selectedPage}
                 onSelectPage={(page) => {
                   setSelectedPage(page);

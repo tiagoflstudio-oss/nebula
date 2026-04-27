@@ -688,7 +688,47 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                     <div className="m-icon">🌐</div>
                     <div className="m-text">
                       <h3>Cérebro Mestre Global</h3>
-                      <p>Configure as chaves de API que serão compartilhadas com todos os usuários do sistema no modo "Mestre".</p>
+                      <p>Configure as chaves de API e defina qual IA será o motor oficial para todos os usuários no modo "Mestre".</p>
+                    </div>
+                  </div>
+
+                  <div className="master-ia-selectors mt-6 glass">
+                    <div className="setting-row">
+                      <div className="setting-info">
+                        <h3>Provedor Mestre Ativo</h3>
+                        <p>Escolha qual motor processará as requisições globais.</p>
+                      </div>
+                      <select 
+                        className="glass-input"
+                        value={config.global_provider || 'openai'}
+                        onChange={(e) => setConfig(prev => ({ ...prev, global_provider: e.target.value }))}
+                      >
+                        <option value="openai">OpenAI (Padrão)</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="google">Google Gemini</option>
+                        <option value="openrouter">OpenRouter</option>
+                      </select>
+                    </div>
+
+                    <div className="setting-row">
+                      <div className="setting-info">
+                        <h3>Modelo Mestre Oficial</h3>
+                        <p>Defina o modelo específico para o sistema.</p>
+                      </div>
+                      <select 
+                        className="glass-input"
+                        value={config.global_selected_model || ''}
+                        onChange={(e) => setConfig(prev => ({ ...prev, global_selected_model: e.target.value }))}
+                      >
+                        <option value="">Selecione um modelo...</option>
+                        {(config.global_provider === 'openai' ? (config.fetched_global_openai_models || ['gpt-4o', 'gpt-4-turbo']) :
+                          config.global_provider === 'anthropic' ? (config.fetched_global_anthropic_models || ['claude-3-5-sonnet-20240620']) :
+                          config.global_provider === 'google' ? (config.fetched_global_google_models || ['gemini-1.5-pro']) :
+                          (config.fetched_global_openrouter_models || ['meta-llama/llama-3-70b-instruct'])
+                        ).map(m => (
+                          <option key={m} value={m}>{m.toUpperCase()}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   
@@ -778,9 +818,38 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                     />
                   </div>
                   
-                  <div className="master-footer-info mt-6 glass">
-                    <span className="material-symbols-outlined">info</span>
-                    <p>Ao salvar estas chaves, elas serão aplicadas automaticamente a todos os chats que utilizam o "Cérebro Mestre".</p>
+                  <div className="master-footer-actions mt-6">
+                    <button 
+                      className="sync-btn-premium master-save-btn"
+                      onClick={async () => {
+                        showToast("Gravando Cérebro Mestre no sistema...", "info");
+                        // Antes de salvar, garantimos que a chave do provedor mestre seja passada como principal se necessário
+                        const masterKey = config.global_provider === 'openai' ? config.global_openai_key :
+                                          config.global_provider === 'anthropic' ? config.global_anthropic_key :
+                                          config.global_provider === 'google' ? config.global_google_key :
+                                          config.global_openrouter_key;
+                        
+                        const success = await onSave({ 
+                          ...config, 
+                          global_api_key: masterKey,
+                          global_provider: config.global_provider || 'openai',
+                          global_selected_model: config.global_selected_model
+                        });
+                        
+                        if (success) {
+                          showToast("Configurações Mestres aplicadas! 🌐", "success");
+                        } else {
+                          showToast("Erro ao aplicar configurações mestres.", "error");
+                        }
+                      }}
+                    >
+                      <span className="material-symbols-outlined">save_as</span>
+                      Salvar Configurações Mestres
+                    </button>
+                    <p className="master-info-text">
+                      <span className="material-symbols-outlined">info</span>
+                      Estas chaves serão aplicadas automaticamente a todos os usuários no modo "Mestre".
+                    </p>
                   </div>
                 </div>
               )}

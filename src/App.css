@@ -4035,11 +4035,26 @@ select.glass-input:focus, select.mini-select:focus {
   background: transparent !important;
 }
 
+/* Saudação e Textos de Boas-vindas */
+.theme-pastel .gemini-greeting h1 {
+  color: #1e293b !important;
+  background: linear-gradient(90deg, #1e293b, #475569) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.theme-pastel .gemini-greeting h2 {
+  color: #475569 !important;
+}
+
+.theme-pastel .gemini-greeting .sparkle {
+  color: #818cf8 !important;
+}
+
 .theme-pastel .gemini-input-card {
-  background: rgba(255, 255, 255, 0.7) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03) !important;
-  backdrop-filter: blur(20px) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05) !important;
 }
 
 .theme-pastel .gemini-input-card textarea {
@@ -4047,37 +4062,36 @@ select.glass-input:focus, select.mini-select:focus {
 }
 
 .theme-pastel .gemini-input-card textarea::placeholder {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
 .theme-pastel .btn-tool, 
 .theme-pastel .btn-send-circle {
-  color: #1e293b !important;
-  background: rgba(0, 0, 0, 0.03) !important;
-}
-
-.theme-pastel .gemini-greeting h1, 
-.theme-pastel .gemini-greeting h2 {
-  color: #1e293b !important;
+  color: #475569 !important;
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
 .theme-pastel .message.user {
   background: #818cf8 !important;
   color: white !important;
   border: none !important;
-  box-shadow: 0 4px 15px rgba(129, 140, 248, 0.2) !important;
 }
 
 .theme-pastel .message.assistant {
-  color: #334155 !important;
+  color: #1e293b !important;
   background: transparent !important;
 }
 
+/* Ajuste para mensagens antigas ou assistente inicial */
+.theme-pastel .message.assistant .markdown-text,
+.theme-pastel .message.assistant div {
+  color: #1e293b !important;
+}
+
 .theme-pastel .chip {
-  background: white !important;
-  color: #475569 !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 .theme-pastel .chip:hover {
@@ -4086,12 +4100,8 @@ select.glass-input:focus, select.mini-select:focus {
 }
 
 .theme-pastel .code-block {
-  background: #0f172a !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-.theme-pastel .markdown-text strong {
-  color: #0f172a !important;
+  background: #1e293b !important;
+  color: #f8f9fa !important;
 }
 
 .theme-pastel .typing-dot {
@@ -4102,8 +4112,624 @@ select.glass-input:focus, select.mini-select:focus {
   background: #f8f9fa !important;
 }
 
-/* Oculta o background animado no modo pastel para ficar limpo */
 .theme-pastel .bg-container {
-  opacity: 0.1 !important;
-  pointer-events: none;
+  display: none !important; /* Remove totalmente distrações de fundo no modo claro */
 }
+
+/* Navbar Botões adicionais */
+.theme-pastel .nav-master-btn {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ===========================================================
+   CHAT TYPOGRAPHY & SPACING OPTIMIZATION
+   =========================================================== */
+
+.chat-messages {
+  padding: 40px 24px 160px 24px !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+  gap: 48px !important; /* Espaço maior entre turnos de conversa */
+}
+
+.message-wrapper {
+  max-width: 100%;
+}
+
+.message {
+  font-size: 1.05rem !important;
+  line-height: 1.75 !important;
+  font-family: 'Inter', sans-serif !important;
+  letter-spacing: -0.01em !important;
+}
+
+.message.assistant {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 !important;
+  color: #e2e8f0;
+}
+
+.theme-pastel .message.assistant {
+  color: #1e293b !important;
+}
+
+.message.user {
+  max-width: 85%;
+  padding: 16px 24px !important;
+  border-radius: 20px !important;
+  font-size: 1rem !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+  background: rgba(129, 140, 248, 0.15) !important;
+  border: 1px solid rgba(129, 140, 248, 0.2) !important;
+  color: #e2e8f0 !important;
+}
+
+.theme-pastel .message.user {
+  background: #818cf8 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.chat-p {
+  margin-bottom: 1.5rem !important;
+}
+
+.chat-list {
+  margin-bottom: 1.5rem !important;
+  padding-left: 1.5rem !important;
+}
+
+.chat-list li {
+  margin-bottom: 0.75rem !important;
+}
+
+.markdown-text-container strong {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.theme-pastel .markdown-text-container strong {
+  color: #0f172a !important;
+}
+
+/* Blocos de Código Refinados */
+.code-block-wrapper {
+  margin: 2rem 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+.code-header {
+  background: rgba(255,255,255,0.03) !important;
+  padding: 10px 16px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.code-lang {
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: #94a3b8 !important;
+}
+
+.btn-copy {
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #94a3b8 !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  font-size: 0.7rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.btn-copy:hover {
+  background: rgba(255,255,255,0.05) !important;
+  color: white !important;
+}
+
+.code-content {
+  padding: 20px !important;
+  margin: 0 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+  overflow-x: auto !important;
+}
+
+.code-content code {
+  font-family: 'Fira Code', 'Cascadia Code', monospace !important;
+}
+
+/* ===========================================================
+   GEMINI LAYOUT: BOTTOM INPUT & CENTRAL MESSAGES
+   =========================================================== */
+
+.chat-container {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  position: relative !important;
+}
+
+.chat-messages {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 80px 24px 220px 24px !important; /* Espaço extra embaixo para o input */
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+  scroll-behavior: smooth !important;
+}
+
+.chat-input-area {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  padding: 20px 24px 40px 24px !important;
+  background: linear-gradient(transparent, #0f111a 60%) !important;
+  z-index: 100 !important;
+  display: flex !important;
+  justify-content: center !important;
+  pointer-events: none; /* Permite clicar através do degradê */
+}
+
+.theme-pastel .chat-input-area {
+  background: linear-gradient(transparent, #f8f9fa 60%) !important;
+}
+
+.gemini-input-card {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  border-radius: 24px !important;
+  padding: 12px 20px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
+  backdrop-filter: blur(20px) !important;
+  pointer-events: auto; /* Reativa cliques dentro do card */
+}
+
+.theme-pastel .gemini-input-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08) !important;
+}
+
+.gemini-greeting {
+  padding-top: 15vh !important;
+  text-align: center !important;
+  flex-shrink: 0 !important;
+}
+
+/* ===========================================================
+
+/* ===========================================================
+   GEMINI PRECISION FRAMING (COLUNA CENTRALIZADA)
+   =========================================================== */
+
+.main-content {
+  height: calc(100vh - 64px) !important; /* Desconta a Navbar */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important; /* Centraliza tudo horizontalmente */
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+.chat-container {
+  width: 100% !important;
+  max-width: 950px !important; /* Largura máxima confortável */
+  margin: 0 auto !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+}
+
+.chat-messages {
+  width: 100% !important;
+  max-width: 850px !important; /* Área de leitura otimizada */
+  margin: 0 auto !important;
+  padding: 40px 20px 220px 20px !important;
+}
+
+.chat-input-area {
+  width: 100% !important;
+  max-width: 900px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  padding-bottom: 30px !important;
+}
+
+.gemini-input-card {
+  width: 100% !important;
+  border-radius: 32px !important;
+}
+
+.message.user {
+  max-width: 75% !important; /* Bolhas de usuário mais contidas */
+  align-self: flex-end !important;
+}
+
+.message.assistant {
+  max-width: 100% !important;
+  align-self: flex-start !important;
+}
+
+/* Otimização Notebook 14" */
+@media (max-width: 1400px) {
+  .chat-container { max-width: 850px !important; }
+  .chat-messages { max-width: 750px !important; }
+  .message { font-size: 0.95rem !important; }
+  .gemini-greeting h1 { font-size: 2.2rem !important; }
+}
+
+/* ===========================================================
+   ULTRA-COMPACT GEMINI SCALE (Otimização 14")
+   =========================================================== */
+
+.gemini-greeting h1 {
+  font-size: 1.8rem !important;
+  margin-bottom: 8px !important;
+}
+
+.gemini-greeting h2 {
+  font-size: 1.1rem !important;
+  opacity: 0.7 !important;
+}
+
+.gemini-input-card {
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  max-width: 780px !important;
+}
+
+.gemini-input-card textarea {
+  font-size: 0.95rem !important;
+  padding: 8px 0 !important;
+}
+
+.btn-tool, .btn-send-circle {
+  transform: scale(0.85) !important; /* Redução global de escala dos botões */
+}
+
+.chat-messages {
+  padding-bottom: 180px !important;
+  padding-top: 20px !important;
+}
+
+.message {
+  font-size: 0.92rem !important; /* Fonte mais profissional e compacta */
+  line-height: 1.6 !important;
+}
+
+.dual-selector-pill {
+  transform: scale(0.85) !important;
+}
+
+.chat-input-area {
+  padding-bottom: 20px !important;
+}
+
+/* Reduzindo o card de erro ou mensagens de sistema */
+.message.assistant.loading, .error-message {
+  font-size: 0.8rem !important;
+}
+
+.message.user {
+  padding: 12px 18px !important;
+  border-radius: 16px !important;
+}
+
+/* ===========================================================
+   MASTER IA HUB STYLES
+   =========================================================== */
+
+.master-ia-selectors {
+  padding: 20px !important;
+  border-radius: 16px !important;
+  margin-bottom: 24px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.master-footer-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  align-items: center !important;
+  padding: 20px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.master-save-btn {
+  width: 100% !important;
+  max-width: 400px !important;
+  height: 50px !important;
+  font-weight: 600 !important;
+  letter-spacing: 1px !important;
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%) !important;
+  box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3) !important;
+}
+
+.master-info-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 0.85rem !important;
+  opacity: 0.6 !important;
+  color: #818cf8 !important;
+}
+
+.master-info-text .material-symbols-outlined {
+  font-size: 1.2rem !important;
+}
+
+.mini-select {
+  padding: 4px 8px !important;
+  font-size: 0.8rem !important;
+  height: auto !important;
+  width: auto !important;
+  margin-left: 10px !important;
+}
+
+/* ===========================================================
+   ENGINE BADGE STYLES
+   =========================================================== */
+
+.active-engine-badge {
+  position: absolute !important;
+  top: -12px !important;
+  left: 20px !important;
+  z-index: 100 !important;
+  pointer-events: none !important;
+}
+
+.engine-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.engine-label.master {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.9) 0%, rgba(192, 132, 252, 0.9) 100%) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.engine-label.personal {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #94a3b8 !important;
+  border-color: rgba(148, 163, 184, 0.3) !important;
+}
+
+.theme-pastel .engine-label.personal {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #64748b !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* ===========================================================
+   LLM HUB PAGE STYLES
+   =========================================================== */
+
+.hub-page {
+  padding: 40px !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  color: white !important;
+}
+
+.hub-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 40px !important;
+}
+
+.hub-title-section h1 {
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  margin-bottom: 8px !important;
+}
+
+.hub-stats {
+  display: flex !important;
+  gap: 20px !important;
+  padding: 12px 24px !important;
+  border-radius: 12px !important;
+  align-items: center !important;
+}
+
+.stat-item {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.stat-item label {
+  font-size: 0.7rem !important;
+  text-transform: uppercase !important;
+  opacity: 0.6 !important;
+}
+
+.stat-item span {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+}
+
+.master-status-text {
+  color: #818cf8 !important;
+}
+
+/* Master Card Premium */
+.master-highlight-section {
+  margin-bottom: 50px !important;
+}
+
+.master-card-premium {
+  position: relative !important;
+  padding: 30px !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(129, 140, 248, 0.3) !important;
+}
+
+.m-card-glow {
+  position: absolute !important;
+  top: -50% !important;
+  left: -50% !important;
+  width: 200% !important;
+  height: 200% !important;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.1) 0%, transparent 70%) !important;
+  pointer-events: none !important;
+}
+
+.m-badge {
+  display: inline-block !important;
+  padding: 4px 10px !important;
+  background: rgba(129, 140, 248, 0.2) !important;
+  color: #818cf8 !important;
+  border-radius: 6px !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 20px !important;
+}
+
+.m-main-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 24px !important;
+  margin-bottom: 30px !important;
+}
+
+.m-icon-large {
+  font-size: 3.5rem !important;
+}
+
+.m-text h2 {
+  font-size: 1.8rem !important;
+  margin-bottom: 4px !important;
+}
+
+.m-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding-top: 20px !important;
+}
+
+.btn-manage-master {
+  background: white !important;
+  color: black !important;
+  border: none !important;
+  padding: 8px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+
+/* Personal Hub Grid */
+.personal-hub-grid h2 {
+  font-size: 1.4rem !important;
+  opacity: 0.9 !important;
+}
+
+.section-title-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 24px !important;
+}
+
+.hub-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+  gap: 20px !important;
+}
+
+.hub-card {
+  padding: 20px !important;
+  border-radius: 16px !important;
+  transition: transform 0.3s ease, border-color 0.3s ease !important;
+}
+
+.hub-card:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.hub-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-bottom: 16px !important;
+}
+
+.h-icon {
+  font-size: 1.5rem !important;
+}
+
+.h-status-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+}
+
+.h-status-dot.online { background: #10b981 !important; box-shadow: 0 0 10px #10b981 !important; }
+.h-status-dot.offline { background: #ef4444 !important; }
+.h-status-dot.unconfigured { background: #64748b !important; }
+
+.hub-card-body h3 {
+  font-size: 1.1rem !important;
+  margin-bottom: 4px !important;
+}
+
+.hub-card-body p {
+  font-size: 0.8rem !important;
+  opacity: 0.5 !important;
+}
+
+.hub-card-footer {
+  margin-top: 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 0.75rem !important;
+}
+
+.btn-setup-mini {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+}
+
+/* Pastel Theme Overrides */
+.theme-pastel .hub-page { color: #1e293b !important; }
+.theme-pastel .hub-title-section h1 { background: linear-gradient(135deg, #1e293b 0%, #64748b 100%) !important; -webkit-background-clip: text !important; }
+.theme-pastel .btn-manage-master { background: #1e293b !important; color: white !important; }

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import './Navbar.css';
 
-const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage, onLoginClick }) => {
+const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage, onLoginClick, theme, onToggleTheme }) => {
   const location = useLocation();
 
   const handleLogout = async () => {

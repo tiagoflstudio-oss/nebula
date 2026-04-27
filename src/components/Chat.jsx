@@ -525,33 +525,35 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
         const lang = match[1] || 'code';
         const code = match[2];
         return (
-          <div key={idx} className="code-block">
+          <div key={idx} className="code-block-wrapper">
             <div className="code-header">
               <span className="code-lang">{lang}</span>
               <button className="btn-copy" onClick={() => navigator.clipboard.writeText(code)}>Copiar</button>
             </div>
-            <pre><code>{code}</code></pre>
+            <pre className="code-content"><code>{code}</code></pre>
           </div>
         );
       }
       
-      // Processamento simples de Markdown para o texto
+      // Processamento de Markdown aprimorado
       let formattedText = part
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrito
         .replace(/\*(.*?)\*/g, '<em>$1</em>') // Itálico
         .replace(/^\s*-\s+(.*)$/gm, '<li>$1</li>') // Listas com hífen
         .replace(/^\s*\d+\.\s+(.*)$/gm, '<li>$1</li>'); // Listas numeradas
 
-      // Envolver listas em <ul> se houver <li>
-      if (formattedText.includes('<li>')) {
-        formattedText = formattedText.replace(/(<li>.*<\/li>)/gs, '<ul class="chat-list">$1</ul>');
-      }
+      // Organização de Parágrafos (evita blocos de texto colados)
+      const paragraphs = formattedText.split('\n\n').map(p => {
+        if (p.trim().startsWith('<li>')) return `<ul class="chat-list">${p}</ul>`;
+        if (p.trim()) return `<p class="chat-p">${p.replace(/\n/g, '<br/>')}</p>`;
+        return '';
+      }).join('');
 
       return (
         <div 
           key={idx} 
-          className="markdown-text" 
-          dangerouslySetInnerHTML={{ __html: formattedText.replace(/\n/g, '<br/>') }}
+          className="markdown-text-container" 
+          dangerouslySetInnerHTML={{ __html: paragraphs }}
         />
       );
     });
@@ -643,7 +645,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
 
   return (
     <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
-      {/* 1. SAUDAÇÃO (Apenas na Home) */}
+      {/* 1. SAUDAÇÃO (Apenas na Home e sem mensagens) */}
       {!chatId && messages.length <= 1 && (
         <div className="gemini-greeting fade-in">
           <h1>
@@ -653,9 +655,37 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
         </div>
       )}
 
-      {/* 2. CARD DE INPUT UNIFICADO (Sempre no topo) */}
+      {/* 2. MENSAGENS DO CHAT (Área Central) */}
+      <div className="chat-messages" ref={scrollRef}>
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`message-wrapper ${msg.role}`}>
+            <div className={`message ${msg.role} glass`}>
+              {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
+            </div>
+          </div>
+        ))}
+        {loading && messages[messages.length - 1].role === 'user' && (
+          <div className="message-wrapper assistant">
+            <div className="message assistant loading">
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+
+      {/* 4. CARD DE INPUT UNIFICADO (Fixo na Base) */}
       <div className="chat-input-area">
         <div className="gemini-input-card glass">
+          <div className="active-engine-badge fade-in">
+            {ollamaConfig.global_ia_enabled ? (
+              <span className="engine-label master">🌐 Mestre: {getCurrentModelDisplay()}</span>
+            ) : (
+              <span className="engine-label personal">👤 Pessoal: {getCurrentModelDisplay()}</span>
+            )}
+          </div>
           <div className="input-top">
             <textarea
               rows="1"
@@ -771,36 +801,6 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
             </div>
           </div>
         </div>
-
-        {/* 3. CHIPS DE SUGESTÃO (Apenas na Home) */}
-        {!chatId && messages.length <= 1 && (
-          <div className="suggestion-chips fade-in">
-            <button className="chip" onClick={() => setInput("Crie uma imagem de um astronauta...")}><span className="emoji">🖼️</span> Criar imagem</button>
-            <button className="chip" onClick={() => setInput("Escreva um código em React...")}><span className="emoji">💻</span> Programar</button>
-            <button className="chip" onClick={() => setInput("Me ajude a planejar uma viagem...")}><span className="emoji">🌍</span> Viajar</button>
-            <button className="chip" onClick={() => setInput("Como melhorar minha produtividade?")}><span className="emoji">⚡</span> Dica</button>
-          </div>
-        )}
-      </div>
-
-      {/* 4. MENSAGENS DO CHAT */}
-      <div className="chat-messages" ref={scrollRef}>
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`message-wrapper ${msg.role}`}>
-            <div className={`message ${msg.role} glass`}>
-              {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
-            </div>
-          </div>
-        ))}
-        {loading && messages[messages.length - 1].role === 'user' && (
-          <div className="message-wrapper assistant">
-            <div className="message assistant loading">
-              <div className="typing-dot"></div>
-              <div className="typing-dot"></div>
-              <div className="typing-dot"></div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

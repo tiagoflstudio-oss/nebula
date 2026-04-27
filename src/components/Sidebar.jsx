@@ -121,6 +121,17 @@ const Sidebar = ({
             {!isCollapsed && <span>Engenheiro</span>}
           </button>
 
+          <button 
+            className={`nav-item ${selectedPage === 'llm-hub' ? 'active' : ''}`}
+            onClick={() => onSelectPage('llm-hub')}
+            title="Hub de LLMs"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2m-3.1-6.9l-1.4 1.4m-10.9 9.9l-1.4 1.4m0-12.7l1.4 1.4m10.9 9.9l1.4 1.4"/>
+            </svg>
+            {!isCollapsed && <span>Hub de LLMs</span>}
+          </button>
+
 
         </nav>
       </div>

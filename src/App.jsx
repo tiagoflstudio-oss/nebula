@@ -25,6 +25,7 @@ import AuditHubPage from './pages/AuditHubPage';
 import CodeSandboxPage from './pages/CodeSandboxPage';
 import MCPExplorerPage from './pages/MCPExplorerPage';
 import OrchestrationHubPage from './pages/OrchestrationHubPage';
+import LLMHubPage from './pages/LLMHubPage';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -418,7 +419,8 @@ function App() {
       );
     }
     if (selectedPage === 'optimizer') return <OptimizerPage />;
-    if (selectedPage === 'engineer') return <EngineerPage config={config} />;
+    if (selectedPage === 'engineer') return <EngineerPage config={config} session={session} />;
+    if (selectedPage === 'llm-hub') return <LLMHubPage config={config} globalSettings={globalSettings} userRole={userRole} />;
     if (selectedPage === 'support') return <SupportPage config={config} session={session} />;
     if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings')} />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;

@@ -3796,3 +3796,215 @@ select.glass-input:focus, select.mini-select:focus {
   .account-hero-card { padding: 16px !important; gap: 16px !important; }
   .profile-photo-wrapper, .user-avatar.xlarge { width: 60px !important; height: 60px !important; font-size: 1.5rem !important; }
 }
+
+
+/* =========================================================
+   GEMINI ELITE UI - DESIGN SYSTEM
+   ========================================================= */
+
+.gemini-greeting {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.gemini-greeting h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #fff 30%, var(--accent-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gemini-greeting .sparkle {
+  font-size: 2rem;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
+}
+
+.gemini-greeting h2 {
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+.gemini-input-card {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 32px;
+  padding: 16px 24px;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gemini-input-card:focus-within {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(129, 140, 248, 0.3);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.input-top textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  resize: none;
+  padding: 8px 0;
+  outline: none;
+  min-height: 40px;
+}
+
+.input-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tool-group, .action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-tool {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-tool:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-tool.active {
+  background: rgba(129, 140, 248, 0.1);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-send-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3);
+}
+
+.btn-send-circle:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(129, 140, 248, 0.5);
+}
+
+.btn-send-circle:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.chip .emoji {
+  font-size: 1.1rem;
+}
+
+/* Dual Selector Pill Override */
+.dual-selector-pill {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.selector-item {
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+  color: var(--text-secondary);
+}
+
+.selector-item.active.master { background: #10b981; color: white; }
+.selector-item.active.personal { background: #818cf8; color: white; }
+
+/* Active View Adjustments */
+.active-view .gemini-input-card {
+  max-width: 95%;
+  margin-bottom: 20px;
+  background: rgba(15, 17, 26, 0.8);
+  backdrop-filter: blur(20px);
+}
+
+.chat-messages {
+  padding-bottom: 120px !important;
+}
+
+.chat-container { display: flex !important; flex-direction: column !important; height: 100vh !important; padding-top: 20px !important; gap: 24px !important; }
+.chat-input-area { flex-shrink: 0; z-index: 10; padding: 0 10px; }
+.chat-messages { flex: 1 !important; overflow-y: auto !important; padding: 10px 20px 100px 20px !important; display: flex !important; flex-direction: column !important; gap: 24px !important; }

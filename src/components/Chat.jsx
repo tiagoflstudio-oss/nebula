@@ -630,183 +630,19 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       const uniqueModels = [];
       rawModels.forEach(m => {
         const display = formatModelName(m);
-        if (!seen.has(display)) {
-          seen.add(display);
-          uniqueModels.push(m);
-        }
-      });
-      list.push({ id: 'openrouter', name: 'OpenRouter', models: uniqueModels, key: mode === 'global' ? 'global_openrouter_key' : 'openrouter_key' });
-    }
-    
-    return list;
-  };
-
-
-  return (
-    <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
-      {!chatId && messages.length <= 1 && (
-        <div className="gemini-greeting fade-in">
-          <h1>
-            <span className="sparkle">✦</span> {getGreeting()}
-          </h1>
-          <h2>Por onde começamos?</h2>
-        </div>
-      )}
-
-      <div className="chat-input-area">
-        <div className="gemini-input-card glass">
-          <div className="input-top">
-            <textarea
-              rows="1"
-              value={input}
-              onChange={(e) => {
-                const val = e.target.value;
-                setInput(val);
-                setShowSkillsMenu(val.endsWith('/'));
-              }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder="Digite um comando ou pergunta..."
-              autoFocus
-            />
-            {showSkillsMenu && (
-              <div className="skills-command-menu glass fade-in">
-                {skills.map(s => (
-                  <div 
-                    key={s.id} 
-                    className="skill-option"
-                    onClick={() => {
-                      setInput(prev => prev.replace(/\/$/, '') + `/${s.name.toLowerCase().replace(/\s+/g, '')} `);
-                      setShowSkillsMenu(false);
-                    }}
-                  >
-                    <span className="skill-cmd">/{s.name.toLowerCase().replace(/\s+/g, '')}</span>
-                    <span className="skill-desc">{s.description.substring(0, 40)}...</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          <div className="input-bottom">
-            <div className="bottom-tools-left">
-              <button className="btn-icon-tool" title="Adicionar arquivo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
-              </button>
-              <button className={`btn-icon-tool ${isListening ? 'listening' : ''}`} onClick={toggleListening} title="Voz">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                </svg>
-              </button>
-              <button className="btn-text-tool">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-                Ferramentas
-              </button>
+        <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
+          {/* 1. SAUDAÇÃO (Apenas na Home) */}
+          {!chatId && messages.length <= 1 && (
+            <div className="gemini-greeting fade-in">
+              <h1>
+                <span className="sparkle">✦</span> {getGreeting()}
+              </h1>
+              <h2>Por onde começamos?</h2>
             </div>
-            
-            <div className="bottom-tools-right">
-              <div className="dual-selector-pill">
-                <div 
-                  className={`pill-option ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
-                  onClick={() => { setSelectorMode('global'); setShowModelSelector(true); }}
-                >
-                  🌐 Mestre
-                </div>
-                <div 
-                  className={`pill-option ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
-                  onClick={() => { setSelectorMode('local'); setShowModelSelector(true); }}
-                >
-                  👤 Pessoal
-                </div>
+          )}
 
-                {showModelSelector && (
-                  <div className="model-dropdown-portal glass fade-in">
-                    <div className="dropdown-header">
-                      <h3>{selectorMode === 'global' ? '🧠 IAs do Mestre' : '🔑 Minhas Integrações'}</h3>
-                      <button onClick={() => setShowModelSelector(false)}>✕</button>
-                    </div>
-                    {getProvidersForConfig(selectorMode === 'global' ? globalSettings : ollamaConfig, selectorMode).map(p => (
-                      <div key={p.id} className="provider-group">
-                        <label>{p.name}</label>
-                        <div className="models-list">
-                          {p.models.map(m => (
-                            <button
-                              key={m}
-                              className="model-option"
-                              onClick={() => {
-                                const newConfig = { ...ollamaConfig };
-                                if (selectorMode === 'global') {
-                                  newConfig.global_ia_enabled = true;
-                                  newConfig.global_selected_provider = p.id;
-                                  newConfig.global_selected_model = m;
-                                } else {
-                                  newConfig.global_ia_enabled = false;
-                                  newConfig.active_provider = p.id;
-                                  if (p.id === 'ollama') newConfig.model = m;
-                                  if (p.id === 'openai') newConfig.openai_model = m;
-                                  if (p.id === 'anthropic') newConfig.anthropic_model = m;
-                                  if (p.id === 'google') newConfig.google_model = m;
-                                  if (p.id === 'openrouter') newConfig.openrouter_model = m;
-                                }
-                                setConfig(newConfig);
-                                setShowModelSelector(false);
-                              }}
-                            >
-                              {m.split('/').pop().toUpperCase()}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button className="btn-send-circle" onClick={handleSend} disabled={loading || !input.trim()}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {!chatId && messages.length <= 1 && (
-          <div className="suggestion-chips fade-in">
-            <button className="chip"><span className="emoji">🖼️</span> Criar imagem</button>
-            <button className="chip"><span className="emoji">🎸</span> Criar música</button>
-            <button className="chip">Melhore meu dia</button>
-            <button className="chip">Me ajude a aprender</button>
-            <button className="chip">Escrever algo</button>
-          </div>
-        )}
-      </div>
-
-      {chatId && (
-        <>
-          <div className="chat-messages" ref={scrollRef}>
-            {messages.map((msg, idx) => (
-              <div key={idx} className={`message-wrapper ${msg.role}`}>
-                <div className={`message ${msg.role} glass`}>
-                  {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
-                </div>
-              </div>
-            ))}
-            {loading && messages[messages.length-1].role === 'user' && (
-              <div className="message-wrapper assistant">
-                <div className="message assistant loading">
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="chat-input-area active-chat">
+          {/* 2. CARD DE INPUT UNIFICADO (Sempre no topo) */}
+          <div className="chat-input-area">
             <div className="gemini-input-card glass">
               <div className="input-top">
                 <textarea
@@ -817,14 +653,13 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                     setInput(val);
                     setShowSkillsMenu(val.endsWith('/'));
                   }}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleSend();
                     }
                   }}
-                  placeholder="digite"
-                  autoFocus
+                  placeholder="Digite um comando ou mensagem..."
                 />
                 {showSkillsMenu && (
                   <div className="skills-command-menu glass bottom-mode fade-in">
@@ -843,27 +678,32 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                   </div>
                 )}
               </div>
-              
+
               <div className="input-bottom">
-                <div className="bottom-tools-left">
-                  <button className="btn-icon-tool" title="Analisar Contrato" onClick={() => setInput("Analisar Contrato: ")}>📄</button>
-                  <button className={`btn-icon-tool ${isListening ? 'listening' : ''}`} onClick={toggleListening} title="Voz">
+                <div className="tool-group">
+                  <button className="btn-tool" onClick={() => setInput(prev => prev + '/')} title="Skills">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <span>Ferramentas</span>
+                  </button>
+                  <button className={`btn-tool ${isListening ? 'listening' : ''}`} onClick={toggleListening} title="Voz">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
                     </svg>
                   </button>
                 </div>
-                
-                <div className="bottom-tools-right">
+
+                <div className="action-group">
                   <div className="dual-selector-pill">
                     <div 
-                      className={`pill-option ${ollamaConfig.global_ia_enabled ? 'active global' : ''}`}
+                      className={`selector-item master ${ollamaConfig.global_ia_enabled ? 'active' : ''}`}
                       onClick={() => { setSelectorMode('global'); setShowModelSelector(true); }}
                     >
                       🌐
                     </div>
                     <div 
-                      className={`pill-option ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
+                      className={`selector-item personal ${!ollamaConfig.global_ia_enabled ? 'active' : ''}`}
                       onClick={() => { setSelectorMode('local'); setShowModelSelector(true); }}
                     >
                       👤
@@ -882,7 +722,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                               {p.models.map(m => (
                                 <button
                                   key={m}
-                                  className="model-option"
+                                  className={`model-option ${ (selectorMode === 'global' ? ollamaConfig.global_selected_model : (p.id === 'ollama' ? ollamaConfig.model : (p.id === 'openai' ? ollamaConfig.openai_model : (p.id === 'anthropic' ? ollamaConfig.anthropic_model : (p.id === 'google' ? ollamaConfig.google_model : ollamaConfig.openrouter_model))))) === m ? 'active' : ''}`}
                                   onClick={() => {
                                     const newConfig = { ...ollamaConfig };
                                     if (selectorMode === 'global') {
@@ -917,11 +757,39 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
                     </svg>
                   </button>
                 </div>
-              </div>
+          </div>
+        </div>
+
+        {/* 3. CHIPS DE SUGESTÃO (Apenas na Home) */}
+        {!chatId && messages.length <= 1 && (
+          <div className="suggestion-chips fade-in">
+            <button className="chip" onClick={() => setInput("Crie uma imagem de um astronauta...")}><span className="emoji">🖼️</span> Criar imagem</button>
+            <button className="chip" onClick={() => setInput("Escreva um código em React...")}><span className="emoji">💻</span> Programar</button>
+            <button className="chip" onClick={() => setInput("Me ajude a planejar uma viagem...")}><span className="emoji">🌍</span> Viajar</button>
+            <button className="chip" onClick={() => setInput("Como melhorar minha produtividade?")}><span className="emoji">⚡</span> Dica</button>
+          </div>
+        )}
+      </div>
+
+      {/* 4. MENSAGENS DO CHAT */}
+      <div className="chat-messages" ref={scrollRef}>
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`message-wrapper ${msg.role}`}>
+            <div className={`message ${msg.role} glass`}>
+              {msg.role === 'assistant' ? renderContent(msg.content) : msg.content}
             </div>
           </div>
-        </>
-      )}
+        ))}
+        {loading && messages[messages.length - 1].role === 'user' && (
+          <div className="message-wrapper assistant">
+            <div className="message assistant loading">
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

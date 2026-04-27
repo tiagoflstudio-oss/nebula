@@ -642,6 +642,7 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
   };
 
 
+  return (
     <div className={`chat-container fade-in ${!chatId ? 'home-view' : 'active-view'}`}>
       {!chatId && messages.length <= 1 && (
         <div className="gemini-greeting fade-in">
@@ -783,19 +784,6 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
           </div>
         )}
       </div>
-              {skills.slice(0, 4).map(s => (
-                <button 
-                  key={s.id} 
-                  className="skill-btn" 
-                  onClick={() => setInput(`/${s.name.toLowerCase().replace(/\s+/g, '')} `)}
-                >
-                  <span className="icon">⚡</span> {s.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {chatId && (
         <>

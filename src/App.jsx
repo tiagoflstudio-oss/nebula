@@ -36,6 +36,7 @@ function App() {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [selectedPage, setSelectedPage] = useState('home');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [config, setConfig] = useState(() => {
     const saved = localStorage.getItem('nebula_config');
     if (saved) {
@@ -62,13 +63,13 @@ function App() {
     };
   });
 
-  const [modalConfig, setModalConfig] = useState({ 
-    isOpen: false, 
-    title: '', 
-    message: '', 
-    type: 'confirm', 
-    initialValue: '', 
-    onConfirm: () => {} 
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'confirm',
+    initialValue: '',
+    onConfirm: () => { }
   });
 
   const processingOAuth = useRef(false);
@@ -111,9 +112,9 @@ function App() {
       const { exchangeCode } = await import('./services/oauthService');
       const provider = 'antigravity'; // For now, assume antigravity
       const redirectUri = window.location.origin + '/callback';
-      
+
       const tokens = await exchangeCode(provider, code, null, null, redirectUri);
-      
+
       // Save to Supabase
       const { error } = await supabase
         .from('provider_connections')
@@ -131,11 +132,11 @@ function App() {
         }]);
 
       if (error) throw error;
-      
+
       // Cleanup URL and go to quota tracker
       window.history.replaceState({}, document.title, "/");
       setSelectedPage('quota');
-      
+
       setModalConfig({
         isOpen: true,
         title: 'Conexão Realizada!',
@@ -145,7 +146,7 @@ function App() {
       });
     } catch (err) {
       console.error("Erro no callback OAuth:", err);
-      
+
       setModalConfig({
         isOpen: true,
         title: 'Erro na Conexão',
@@ -153,7 +154,7 @@ function App() {
         type: 'confirm',
         onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
       });
-      
+
       window.history.replaceState({}, document.title, "/");
     }
   };
@@ -162,14 +163,14 @@ function App() {
     if (!session?.user) return;
     try {
       console.log("🔍 Nebula: Buscando perfil e configurações para:", session.user.email);
-      
+
       // Busca perfil do usuário atual
       const { data, error } = await supabase
         .from('profiles')
         .select('role, full_name, settings')
         .eq('id', session.user.id)
         .single();
-      
+
       if (error) {
         console.error("❌ Nebula: Erro ao buscar perfil:", error.message);
       }
@@ -203,7 +204,7 @@ function App() {
         const { count } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
-        
+
         setMasterStats({ userCount: count || 0 });
       }
     } catch (error) {
@@ -218,7 +219,7 @@ function App() {
         .from('profiles')
         .update({ settings: newConfig })
         .eq('id', session.user.id);
-      
+
       if (error) throw error;
 
       // Sincroniza com a infraestrutura do Master OS
@@ -226,12 +227,12 @@ function App() {
         const { masterService } = await import('./services/masterService');
         await masterService.saveProviderConnection(
           session.user.id,
-          newConfig.global_provider, 
+          newConfig.global_provider,
           newConfig.global_api_key,
           newConfig.fetched_global_models || []
         );
       }
-      
+
       setGlobalSettings(newConfig);
       console.log("✅ Nebula: Configurações e Infraestrutura sincronizadas");
       return true;
@@ -247,7 +248,7 @@ function App() {
       .from('chats')
       .select('*')
       .eq('user_id', session.user.id);
-    
+
     if (selectedProjectId) {
       query = query.eq('project_id', selectedProjectId);
     }
@@ -311,7 +312,7 @@ function App() {
           if (selectedChatId === id) setSelectedChatId(null);
           fetchChats();
           setModalConfig(prev => ({ ...prev, isOpen: false }));
-        } catch (error) {}
+        } catch (error) { }
       }
     });
   };
@@ -368,12 +369,12 @@ function App() {
           console.log(`🔥 Nebula: Executando DELETE no Supabase para ID: ${id}`);
           const { error } = await supabase.from('projects').delete().eq('id', id);
           if (error) throw error;
-          
+
           console.log(`✅ Nebula: Projeto ${id} excluído com sucesso.`);
-          
+
           // Atualização otimista da UI
           setProjects(prev => prev.filter(p => p.id !== id));
-          
+
           if (selectedProjectId === id) setSelectedProjectId(null);
           setModalConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
@@ -398,11 +399,11 @@ function App() {
 
     if (selectedChatId === 'settings' || selectedPage === 'settings') {
       return (
-        <SettingsPage 
-          config={config} 
-          setConfig={setConfig} 
-          userRole={userRole} 
-          session={session} 
+        <SettingsPage
+          config={config}
+          setConfig={setConfig}
+          userRole={userRole}
+          session={session}
           onSave={handleSaveConfig}
           setModalConfig={setModalConfig}
           globalSettings={globalSettings}
@@ -422,10 +423,10 @@ function App() {
     if (selectedPage === 'orch') return <OrchestrationHubPage config={config} />;
     if (selectedPage === 'master-os') {
       return (
-        <MasterOSPage 
-          config={config} 
-          setConfig={setConfig} 
-          onSave={handleSaveConfig} 
+        <MasterOSPage
+          config={config}
+          setConfig={setConfig}
+          onSave={handleSaveConfig}
           masterStats={masterStats}
           globalSettings={globalSettings}
         />
@@ -433,19 +434,19 @@ function App() {
     }
     if (selectedPage === 'all-chats') {
       return (
-        <AllChatsPage 
-          session={session} 
+        <AllChatsPage
+          session={session}
           onSelectChat={(id) => {
             setSelectedChatId(id);
             setSelectedPage('home');
-          }} 
+          }}
         />
       );
     }
     if (selectedPage === 'projects-list') {
       return (
-        <ProjectsListPage 
-          projects={projects} 
+        <ProjectsListPage
+          projects={projects}
           onCreateProject={handleCreateProject}
           onDeleteProject={handleDeleteProject}
           onSelectProject={(id) => {
@@ -455,29 +456,30 @@ function App() {
         />
       );
     }
-    
+
     if (selectedProjectId && !selectedChatId) {
       return <ProjectPage projectId={selectedProjectId} onSelectChat={setSelectedChatId} />;
     }
-    
+
     return (
       <div className="chat-container">
         {!selectedChatId && (
           <div className="home-header fade-in">
           </div>
         )}
-          <Chat 
-            ollamaConfig={config} 
-            setConfig={setConfig}
-            chatId={selectedChatId} 
-            session={session} 
-            onChatCreated={(id) => {
-              setSelectedChatId(id);
-              fetchChats();
-            }}
-            globalSettings={globalSettings}
-          />
-        </div>
+        <Chat
+          ollamaConfig={config}
+          setConfig={setConfig}
+          chatId={selectedChatId}
+          session={session}
+          onChatCreated={(id) => {
+            setSelectedChatId(id);
+            fetchChats();
+          }}
+          onRequireAuth={() => setIsAuthModalOpen(true)}
+          globalSettings={globalSettings}
+        />
+      </div>
     );
   };
 
@@ -485,70 +487,71 @@ function App() {
     <Router>
       <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Background />
-        {!session ? (
-          <Auth />
-        ) : (
-          <>
-            <Sidebar 
-              session={session}
-              userRole={userRole}
-              config={config}
-              chats={chats}
-              projects={projects}
-              selectedProjectId={selectedProjectId}
-              onSelectProject={(id) => {
-                setSelectedProjectId(id);
-                setSelectedChatId(null);
-                setSelectedPage('home');
-              }}
-              onCreateProject={handleCreateProject}
-              selectedChatId={selectedChatId}
-              onSelectChat={(id) => {
-                setSelectedChatId(id);
-                setSelectedPage('home');
-              }}
-              onNewChat={handleNewChat}
-              selectedPage={selectedPage}
-              onSelectPage={(page) => {
-                setSelectedPage(page);
-                setSelectedChatId(null);
-                setSelectedProjectId(null);
-              }}
-              onDeleteChat={handleDeleteChat}
-              onRenameChat={handleRenameChat}
-              onPinChat={handlePinChat}
-              isCollapsed={isSidebarCollapsed}
-              onToggle={toggleSidebar}
-            />
-            <div className="main-wrapper">
-              <Navbar 
-                session={session} 
-                userRole={userRole}
-                selectedPage={selectedPage}
-                onSelectPage={(page) => {
-                  setSelectedPage(page);
-                  setSelectedChatId(null);
-                  setSelectedProjectId(null);
-                }}
-                onHome={() => {
-                  setSelectedChatId(null);
-                  setSelectedProjectId(null);
-                  setSelectedPage('home');
-                }} 
-              />
-              <div className="main-content">
-                {renderContent()}
-              </div>
-            </div>
-          </>
+        {(!session && isAuthModalOpen) && (
+          <Auth onClose={() => setIsAuthModalOpen(false)} />
         )}
-        <Modal 
-          {...modalConfig} 
-          onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
+
+        <Sidebar
+          session={session}
+          userRole={userRole}
+          config={config}
+          chats={chats}
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={(id) => {
+            setSelectedProjectId(id);
+            setSelectedChatId(null);
+            setSelectedPage('home');
+          }}
+          onCreateProject={handleCreateProject}
+          selectedChatId={selectedChatId}
+          onSelectChat={(id) => {
+            setSelectedChatId(id);
+            setSelectedPage('home');
+          }}
+          onNewChat={handleNewChat}
+          selectedPage={selectedPage}
+          onSelectPage={(page) => {
+            setSelectedPage(page);
+            setSelectedChatId(null);
+            setSelectedProjectId(null);
+          }}
+          onDeleteChat={handleDeleteChat}
+          onRenameChat={handleRenameChat}
+          onPinChat={handlePinChat}
+          isCollapsed={isSidebarCollapsed}
+          onToggle={toggleSidebar}
         />
+        <div className="main-wrapper">
+          <Navbar
+            session={session}
+            userRole={userRole}
+            selectedPage={selectedPage}
+            onSelectPage={(page) => {
+              setSelectedPage(page);
+              setSelectedChatId(null);
+              setSelectedProjectId(null);
+            }}
+            onHome={() => {
+              setSelectedChatId(null);
+              setSelectedProjectId(null);
+              setSelectedPage('home');
+            }}
+            onLoginClick={() => setIsAuthModalOpen(true)}
+          />
+          <div className="main-content">
+            {renderContent()}
+          </div>
+        </div>
       </div>
+      <Modal
+        {...modalConfig}
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </Router>
   );
 }
+
+
 
 export default App;

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import './Navbar.css';
 
-const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage }) => {
+const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage, onLoginClick }) => {
   const location = useLocation();
 
   const handleLogout = async () => {
@@ -14,7 +14,7 @@ const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage }) => {
     <nav className="navbar">
       <div className="nav-brand-container">
         <div className="nav-brand" onClick={onHome} style={{ cursor: 'pointer' }}>
-          Nebula <span>AI</span>
+          Nebula
         </div>
         {(userRole === 'admin' || userRole === 'vip') && (
           <button 
@@ -59,7 +59,20 @@ const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage }) => {
             <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
+
+        {!session ? (
+          <button className="nav-login-btn glass" onClick={onLoginClick}>
+            Entrar
+          </button>
+        ) : (
+          <button className="nav-login-btn logout" onClick={handleLogout} title="Sair do sistema">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
       </div>
+
     </nav>
   );
 };

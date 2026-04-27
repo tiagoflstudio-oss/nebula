@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { trackUsage } from '../services/usageService';
 import { skillService } from '../services/skillService';
 
-const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalSettings }) => {
+const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalSettings, onRequireAuth }) => {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Olá! Sou o Nebula AI. Como posso ajudar você hoje?' }
   ]);
@@ -133,6 +133,11 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
+
+    if (!session) {
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
 
     let currentChatId = chatId;
 
@@ -554,10 +559,15 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    const name = session?.user?.user_metadata?.full_name?.split(' ')[0] || 'Tiago';
-    if (hour < 12) return `Bom dia, ${name}`;
-    if (hour < 18) return `Boa tarde, ${name}`;
-    return `Boa noite, ${name}`;
+    const name = session?.user?.user_metadata?.full_name?.split(' ')[0] || 
+                 session?.user?.email?.split('@')[0] || 
+                 'Visitante';
+                 
+    let timeGreeting = "Boa noite";
+    if (hour >= 5 && hour < 12) timeGreeting = "Bom dia";
+    else if (hour >= 12 && hour < 18) timeGreeting = "Boa tarde";
+    
+    return `${timeGreeting}, ${name}`;
   };
 
   const getCurrentModelDisplay = () => {
@@ -637,7 +647,6 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
       {!chatId && (
         <div className="home-welcome-section">
           <div className="greeting-wrapper">
-            <span className="star-icon">✴</span>
             <h1>{getGreeting()}</h1>
           </div>
           

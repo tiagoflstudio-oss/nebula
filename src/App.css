@@ -1,6 +1,73 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
+/* Auth Modal Styles */
+.auth-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(5, 6, 10, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-close-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}
+
+.auth-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: rotate(90deg) scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.auth-nebula-logo {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.4)) contrast(1.2);
+  margin-bottom: 5px;
+  mix-blend-mode: screen;
+}
+
+.nebula-main-logo {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px rgba(129, 140, 248, 0.3)) contrast(1.2) brightness(1.1);
+  margin-bottom: 20px;
+  animation: logoPulse 4s infinite alternate ease-in-out;
+  mix-blend-mode: screen;
+}
+
+
+
+@keyframes logoPulse {
+  from { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 15px rgba(129, 140, 248, 0.3)); }
+  to { transform: scale(1.05) rotate(2deg); filter: drop-shadow(0 0 25px rgba(129, 140, 248, 0.5)); }
+}
+
 :root {
+
+
   --bg-dark: #05060a;
   --accent-primary: #818cf8;
   --accent-secondary: #c084fc;

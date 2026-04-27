@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const Auth = () => {
+const Auth = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,10 +43,16 @@ const Auth = () => {
     <div className="auth-overlay">
       <div className="auth-nebula-glow"></div>
       <div className="auth-card glass fade-in">
+        {onClose && (
+          <button className="auth-close-btn" onClick={onClose} title="Fechar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        )}
         <div className="auth-header">
           <div className="auth-logo">
-            <span className="star-icon">✴</span>
-            <h2>Nebula <span>AI</span></h2>
+            <h2>Nebula</h2>
           </div>
           <p>{isSignUp ? 'Crie sua conta no ecossistema' : 'Bem-vindo de volta ao futuro'}</p>
         </div>

@@ -193,13 +193,13 @@ const Sidebar = ({
         </button>
 
         <div className="user-profile">
-          <div className="user-avatar" onClick={() => onSelectPage('settings')} style={{ cursor: 'pointer' }}>
-            {session?.user?.email?.[0].toUpperCase()}
+          <div className="user-avatar" onClick={() => session ? onSelectPage('settings') : null} style={{ cursor: 'pointer' }}>
+            {session ? session.user?.email?.[0].toUpperCase() : '?'}
           </div>
           {!isCollapsed && (
-            <div className="user-info" onClick={() => onSelectPage('settings')} style={{ cursor: 'pointer' }}>
-              <span className="user-name">{session?.user?.email?.split('@')[0]}</span>
-              <span className="user-plan">{userRole === 'vip' ? 'Plano VIP' : 'Plano Gratuito'}</span>
+            <div className="user-info" onClick={() => session ? onSelectPage('settings') : null} style={{ cursor: 'pointer' }}>
+              <span className="user-name">{session ? session.user?.email?.split('@')[0] : 'Visitante'}</span>
+              <span className="user-plan">{session ? (userRole === 'vip' ? 'Plano VIP' : 'Plano Gratuito') : 'Modo Demonstração'}</span>
             </div>
           )}
           {!isCollapsed && (

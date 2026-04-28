@@ -46,56 +46,49 @@ const LLMHubPage = ({ config, globalSettings, userRole }) => {
 
   return (
     <div className="hub-page fade-in">
-      <header className="hub-header">
+      <header className="hub-header compact-header">
         <div className="hub-title-section">
           <h1>Hub de Inteligência</h1>
-          <p>Monitoramento central de motores e conexões neurais.</p>
+          <p>Monitoramento central de motores neurais</p>
         </div>
-        <div className="hub-stats glass">
-          <div className="stat-item">
-            <label>Ativos</label>
-            <span>{Object.values(statuses).filter(s => s === 'online').length}</span>
+        <div className="hub-header-actions">
+          <div className="hub-stats glass">
+            <div className="stat-item">
+              <label>Ativos</label>
+              <span>{Object.values(statuses).filter(s => s === 'online').length}</span>
+            </div>
           </div>
-          <div className="stat-divider"></div>
-          <div className="stat-item">
-            <label>Master OS</label>
-            <span className="master-status-text">{masterProvider.toUpperCase()}</span>
-          </div>
+          <button className="btn-refresh-hub glass" onClick={checkAllConnections}>
+            <span className="material-symbols-outlined">sync</span> Sincronizar
+          </button>
         </div>
       </header>
 
-      <section className="master-highlight-section">
-        <div className="master-card-premium glass">
-          <div className="m-card-glow"></div>
-          <div className="m-card-content">
-            <div className="m-badge">SISTEMA MESTRE</div>
-            <div className="m-main-info">
-              <div className="m-icon-large">🌐</div>
-              <div className="m-text">
-                <h2>{masterProvider.charAt(0).toUpperCase() + masterProvider.slice(1)} Engine</h2>
-                <p>Modelo Oficial: <strong>{masterModel.toUpperCase()}</strong></p>
-              </div>
+      <section className="unified-hub-grid">
+        <div className="hub-grid">
+          {/* Master Card (Compact) */}
+          <div className="hub-card master-hub-card glass">
+            <div className="m-card-glow"></div>
+            <div className="hub-card-header">
+              <span className="h-icon">🌐</span>
+              <span className="m-badge-mini">SISTEMA MESTRE</span>
             </div>
-            <div className="m-footer">
+            <div className="hub-card-body">
+              <h3>{masterProvider.charAt(0).toUpperCase() + masterProvider.slice(1)} Engine</h3>
+              <p>Modelo: <strong>{masterModel.toUpperCase()}</strong></p>
+            </div>
+            <div className="hub-card-footer">
               <span className="status-indicator">
                 <span className="status-dot online"></span>
                 Operacional
               </span>
-              <button className="btn-manage-master" onClick={() => window.dispatchEvent(new CustomEvent('nav-settings', { detail: 'ia-global' }))}>
+              <button className="btn-setup-mini" onClick={() => window.dispatchEvent(new CustomEvent('nav-settings', { detail: 'ia-global' }))}>
                 Configurar
               </button>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="personal-hub-grid">
-        <div className="section-title-row">
-          <h2>Suas Conexões Pessoais</h2>
-          <button className="btn-refresh-hub" onClick={checkAllConnections}>Sincronizar Agora</button>
-        </div>
-        
-        <div className="hub-grid">
+          {/* Personal Connections */}
           {providers.map(p => (
             <div key={p.id} className={`hub-card glass ${statuses[p.id]}`}>
               <div className="hub-card-header">

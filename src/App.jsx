@@ -26,6 +26,8 @@ import CodeSandboxPage from './pages/CodeSandboxPage';
 import MCPExplorerPage from './pages/MCPExplorerPage';
 import OrchestrationHubPage from './pages/OrchestrationHubPage';
 import LLMHubPage from './pages/LLMHubPage';
+import { exchangeCode } from './services/oauthService';
+import { masterService } from './services/masterService';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -110,7 +112,6 @@ function App() {
 
   const handleOAuthCallback = async (code) => {
     try {
-      const { exchangeCode } = await import('./services/oauthService');
       const provider = 'antigravity'; // For now, assume antigravity
       const redirectUri = window.location.origin + '/callback';
 
@@ -225,7 +226,6 @@ function App() {
 
       // Sincroniza com a infraestrutura do Master OS
       if (newConfig.global_api_key && newConfig.global_provider && session?.user?.id) {
-        const { masterService } = await import('./services/masterService');
         await masterService.saveProviderConnection(
           session.user.id,
           newConfig.global_provider,

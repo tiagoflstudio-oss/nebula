@@ -507,6 +507,7 @@ function App() {
           config={config}
           chats={chats}
           projects={projects}
+          onToggleTheme={toggleTheme}
           selectedProjectId={selectedProjectId}
           onSelectProject={(id) => {
             setSelectedProjectId(id);

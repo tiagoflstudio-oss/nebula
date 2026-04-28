@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import './SidebarMinimal.css';
 
@@ -20,9 +20,24 @@ const Sidebar = ({
   onToggle,
   session,
   userRole,
-  config
+  config,
+  onToggleTheme
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const filteredChats = chats?.filter(chat => 
     chat.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -203,32 +218,74 @@ const Sidebar = ({
           )}
         </button>
 
-        <div className="user-profile">
-          <div className="user-avatar" onClick={() => session ? onSelectPage('settings') : null} style={{ cursor: 'pointer' }}>
-            {session ? session.user?.email?.[0].toUpperCase() : '?'}
+        <div className="user-menu-wrapper" ref={menuRef}>
+          {isUserMenuOpen && session && !isCollapsed && (
+            <div className="user-menu-popover">
+              <div className="user-menu-item" onClick={() => { setIsUserMenuOpen(false); onSelectPage('settings'); }}>
+                <span className="material-symbols-outlined">settings</span>
+                Configurações
+              </div>
+              <div className="user-menu-item" onClick={() => { setIsUserMenuOpen(false); if (onToggleTheme) onToggleTheme(); }}>
+                <span className="material-symbols-outlined">palette</span>
+                Tema
+              </div>
+              <div className="user-menu-item" onClick={() => { setIsUserMenuOpen(false); onSelectPage('quota'); }}>
+                <span className="material-symbols-outlined">workspace_premium</span>
+                Assinatura
+              </div>
+              <div className="user-menu-item" onClick={() => { setIsUserMenuOpen(false); onSelectPage('settings-conexoes'); }}>
+                <span className="material-symbols-outlined">person</span>
+                Contexto Pessoal
+              </div>
+              
+              <div className="user-menu-divider"></div>
+              
+              <div className="user-menu-item" onClick={() => { setIsUserMenuOpen(false); onSelectPage('support'); }}>
+                <span className="material-symbols-outlined">help</span>
+                Ajuda
+              </div>
+              
+              <div className="user-menu-divider"></div>
+              
+              <div className="user-menu-item logout" onClick={async () => {
+                setIsUserMenuOpen(false);
+                const { error } = await supabase.auth.signOut();
+                if (error) console.error('Erro ao sair:', error.message);
+              }}>
+                <span className="material-symbols-outlined">logout</span>
+                Sair
+              </div>
+            </div>
+          )}
+
+          <div 
+            className="user-profile" 
+            onClick={() => {
+              if (!session) return;
+              if (isCollapsed) {
+                onToggle();
+                setTimeout(() => setIsUserMenuOpen(true), 300);
+              } else {
+                setIsUserMenuOpen(!isUserMenuOpen);
+              }
+            }} 
+            style={{ cursor: session ? 'pointer' : 'default' }}
+          >
+            <div className="user-avatar">
+              {session ? session.user?.email?.[0].toUpperCase() : '?'}
+            </div>
+            {!isCollapsed && (
+              <div className="user-info">
+                <span className="user-name">{session ? session.user?.email?.split('@')[0] : 'Visitante'}</span>
+                <span className="user-plan">{session ? (userRole === 'vip' ? 'Plano VIP' : 'Plano Gratuito') : 'Modo Demonstração'}</span>
+              </div>
+            )}
+            {!isCollapsed && session && (
+               <svg className="menu-expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                 <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
+               </svg>
+            )}
           </div>
-          {!isCollapsed && (
-            <div className="user-info" onClick={() => session ? onSelectPage('settings') : null} style={{ cursor: 'pointer' }}>
-              <span className="user-name">{session ? session.user?.email?.split('@')[0] : 'Visitante'}</span>
-              <span className="user-plan">{session ? (userRole === 'vip' ? 'Plano VIP' : 'Plano Gratuito') : 'Modo Demonstração'}</span>
-            </div>
-          )}
-          {!isCollapsed && (
-            <div className="user-actions">
-              <button 
-                title="Sair" 
-                className="btn-logout"
-                onClick={async () => {
-                  const { error } = await supabase.auth.signOut();
-                  if (error) console.error('Erro ao sair:', error.message);
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </aside>

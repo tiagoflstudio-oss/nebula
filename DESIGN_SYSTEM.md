@@ -1,41 +1,59 @@
-# 🌌 Nebula Design System
+# 🌌 Design System: Nebula AI (Premium Edition)
 
-Este documento define os padrões visuais e de interface do ecossistema Nebula AI. O objetivo é manter uma estética **minimalista, elegante e premium**.
+Este documento define a linguagem visual e os padrões de interface do ecossistema Nebula, garantindo uma experiência coesa, moderna e de alto nível.
 
-## 🎨 Paleta de Cores (Theming)
-- **Background:** `#0a0a0c` (Profundo, quase preto, para foco total).
-- **Surface (Glass):** `rgba(255, 255, 255, 0.03)` com `backdrop-filter: blur(12px)`.
-- **Accent Primary:** `#818cf8` (Indigo vibrante para ações principais).
-- **Text Primary:** `#ffffff` (Branco puro).
-- **Text Secondary:** `rgba(255, 255, 255, 0.6)` (Cinza suave para descrições).
-- **Success:** `#4ade80` (Verde néon para status positivos).
+---
+
+## 🎨 Paleta de Cores (Mestre Tokens)
+As cores foram selecionadas para criar profundidade cósmica e foco.
+
+- **Background:** `#0a0b10` (Preto azulado profundo).
+- **Primary Accent:** `#6366f1` (Indigo vibrante para ações principais).
+- **Secondary Accent:** `#a855f7` (Purple vibrante para gradientes e estados).
+- **Text Primary:** `#f8fafc` (Off-white para máxima legibilidade).
+- **Text Secondary:** `#94a3b8` (Cinza azulado para descrições e desativações).
+- **Glass BG:** `rgba(255, 255, 255, 0.03)` (Base para cartões translúcidos).
+
+---
 
 ## 🖋️ Tipografia
-- **Fonte Principal:** Inter ou Roboto (Sans-serif moderna).
-- **Logo:** Peso 700 (Bold) com o sufixo "AI" em gradiente.
-- **Títulos:** Peso 600 com espaçamento entre letras reduzido (`letter-spacing: -0.5px`).
+- **Fonte Principal:** `Outfit` (Sans-serif geométrica e moderna).
+- **Logo:** Peso 700 com efeito de gradiente Indigo-to-Purple.
+- **Títulos:** Peso 600 com `letter-spacing: -0.02em`.
+- **Corpo:** Peso 400 com `line-height: 1.6`.
+
+---
+
+## ✨ Efeitos e Animações (O "Vibe")
+
+### 1. Glassmorphism
+Todos os containers principais devem usar a classe `.glass`:
+- **Blur:** `12px`.
+- **Borda:** `1px solid rgba(255, 255, 255, 0.1)`.
+- **Border Radius:** `24px` (Padrão para cards e modais).
+
+### 2. Atmosfera Cósmica
+- **Background Bubbles:** Bolhas de gradiente radial com desfoque de `40px`.
+- **Animação Float:** Movimento orgânico lento (20s) para as bolhas de fundo.
+- **Fade-in:** Entrada suave com `translateY(10px)` para todos os elementos de página.
+
+---
 
 ## 🧩 Componentes Chave
 
-### 1. Balões de Chat (Claude Style)
-- **Usuário:** Fundo levemente destacado, alinhado à direita ou centralizado conforme o fluxo.
-- **IA:** Sem fundo sólido, tipografia limpa, ícone de avatar minimalista.
-- **Blocos de Código:** Janela "Nebula Code" com tema Dark, botão de cópia e realce de sintaxe.
+### 1. Sidebar Premium
+- Navegação vertical com ícones minimalistas.
+- **Menu de Usuário:** Localizado no rodapé da sidebar usando um sistema de **Popover** para configurações e perfil.
+- Estado `active`: Destaque com brilho lateral (glow) e fundo leve.
 
-### 2. Sidebar (Navegação)
-- Efeito Glassmorphism total.
-- Itens de menu com estados `hover` e `active` sutis (mudança de opacidade e fundo leve).
-- Organização por pastas para Projetos.
+### 2. Chat OS
+- Input de chat "flutuante" com bordas ultra-arredondadas.
+- Streaming de texto com animação suave de digitação.
+- Blocos de código com tema Dark "Nebula" e botão de cópia rápida.
 
-### 3. Otimizador (Gamer/Performance)
-- Uso de animações dinâmicas (rotação e pulso).
-- Cards de estatísticas com bordas arredondadas (20px).
-- Botões grandes com sombras brilhantes (glow).
-
-## 🚀 Filosofia de UX
-1. **Menos é Mais:** Reduzir ruído visual. Apenas o necessário deve estar na tela.
-2. **Feedback Imediato:** Cada clique deve ter uma micro-animação ou mudança de cor.
-3. **Contexto:** O logo sempre reseta a navegação para a "Home" (Chat Central).
+### 3. Quota Tracker
+- Progress bars com gradientes lineares.
+- Suporte visual para status "Ilimitado/Enterprise" com brilho dourado ou indigo.
 
 ---
-*Este guia deve ser atualizado sempre que uma nova tendência visual for incorporada ao Nebula.*
+*Atualizado por Antigravity em 2026-04-28*

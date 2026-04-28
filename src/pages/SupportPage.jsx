@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import MasterOS from '../components/MasterOS';
-
-const SupportPage = ({ config, session }) => {
+const SupportPage = ({ config }) => {
   const [mode, setMode] = useState('menu'); // menu, dialogue, decision, journal
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -63,6 +61,7 @@ const SupportPage = ({ config, session }) => {
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.message.content }]);
     } catch (error) {
+      console.error(error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Desculpe, tive um problema ao me conectar. Verifique se o seu motor de IA está ligado.' }]);
     } finally {
       setLoading(false);

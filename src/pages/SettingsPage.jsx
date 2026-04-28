@@ -2,6 +2,67 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { buildAuthUrl } from '../services/oauthService';
 
+const IntegrationRow = ({ label, description, value, field, placeholder, onTest, setConfig, config }) => {
+  const [showKey, setShowKey] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle'); // idle, loading, success, error
+
+  const handleSync = async () => {
+    setSyncStatus('loading');
+    try {
+      const result = await onTest(value);
+      if (result === false) {
+        setSyncStatus('error');
+      } else {
+        setSyncStatus('success');
+      }
+    } catch (err) {
+      setSyncStatus('error');
+    }
+    setTimeout(() => setSyncStatus('idle'), 5000);
+  };
+
+  return (
+    <div className="setting-row">
+      <div className="setting-info">
+        <h3>{label}</h3>
+        <p>{description}</p>
+      </div>
+      <div className="integration-input-group">
+        <div className="input-with-eye">
+          <input
+            type={showKey ? "text" : "password"}
+            className="glass-input api-key-input"
+            value={value || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setConfig(prev => ({ ...prev, [field]: val }));
+              setSyncStatus('idle');
+            }}
+            placeholder={placeholder || "Inserir API Key..."}
+            autoComplete="new-password"
+          />
+          <button
+            className="eye-btn"
+            onClick={() => setShowKey(!showKey)}
+            title={showKey ? "Esconder" : "Mostrar"}
+          >
+            {showKey ? '👁️‍🗨️' : '👁️'}
+          </button>
+        </div>
+        <button
+          className={`test-api-btn glass sync-mode ${syncStatus}`}
+          onClick={handleSync}
+          disabled={syncStatus === 'loading'}
+        >
+          {syncStatus === 'loading' ? '...' :
+            syncStatus === 'success' ? 'Sincronizado ✅' :
+              syncStatus === 'error' ? 'Erro ❌' : 'Sincronizar'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalConfig, globalSettings, initialSection }) => {
   const [activeSection, setActiveSection] = useState(initialSection || 'geral');
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
@@ -13,19 +74,18 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
   const [isWaitingForCode, setIsWaitingForCode] = useState(false);
   const [oauthCode, setOauthCode] = useState('');
 
-  React.useEffect(() => {
-    if (initialSection) {
-      setActiveSection(initialSection);
-    }
-  }, [initialSection]);
+  const [prevInitial, setPrevInitial] = useState(initialSection);
+  if (initialSection !== prevInitial) {
+    setPrevInitial(initialSection);
+    if (initialSection) setActiveSection(initialSection);
+  }
 
-  React.useEffect(() => {
-    if (activeSection === 'conexoes') {
-      fetchConnections();
-    }
-  }, [activeSection]);
+  const showToast = React.useCallback((message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3000);
+  }, []);
 
-  const fetchConnections = async () => {
+  const fetchConnections = React.useCallback(async () => {
     setConnectionsLoading(true);
     try {
       const { data, error } = await supabase
@@ -39,7 +99,14 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
     } finally {
       setConnectionsLoading(false);
     }
-  };
+  }, [showToast]);
+
+  React.useEffect(() => {
+    if (activeSection === 'conexoes') {
+      fetchConnections();
+    }
+  }, [activeSection, fetchConnections]);
+
 
   const handleAddConnection = async () => {
     if (!newConn.access_token) return showToast("Token é obrigatório", "error");
@@ -84,7 +151,46 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
     });
   };
 
-  const handleOAuthStart = () => {
+  const handleOAuthStart = async () => {
+    if (newConn.provider === 'antigravity') {
+      try {
+        showToast("Conectando via Nebula Bridge local...", "info");
+        const response = await fetch('http://localhost:3001/api/antigravity/refresh-local-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao obter token da Bridge. Verifique se o "npm run bridge" está rodando no terminal.');
+        }
+
+        const data = await response.json();
+        if (!data.access_token) {
+          throw new Error('Token não retornado pela Bridge.');
+        }
+
+        const { error } = await supabase
+          .from('provider_connections')
+          .insert([{
+            provider: 'antigravity',
+            name: 'Local ADC (Bridge)',
+            access_token: data.access_token,
+            auth_type: 'oauth',
+            user_id: session?.user?.id,
+            is_active: true
+          }]);
+        
+        if (error) throw error;
+        
+        showToast("Conexão automática estabelecida com sucesso!", "success");
+        setShowAddModal(false);
+        fetchConnections();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+      return;
+    }
+
     try {
       const redirectUri = window.location.origin + '/callback'; // Simulated redirect
       const state = Math.random().toString(36).substring(7);
@@ -99,10 +205,6 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
     }
   };
 
-  const showToast = (message, type = 'info') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3000);
-  };
 
   const menuItems = [
     { id: 'geral', label: 'Geral', icon: '⚙️' },
@@ -116,68 +218,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
     { id: 'nebula-code', label: 'Nebula Code', icon: '💻' },
   ];
 
-  const IntegrationRow = ({ label, description, value, field, placeholder, onTest, setConfig, config }) => {
-    const [showKey, setShowKey] = useState(false);
-    const [syncStatus, setSyncStatus] = useState('idle'); // idle, loading, success, error
 
-    const handleSync = async () => {
-      setSyncStatus('loading');
-      try {
-        const result = await onTest(value);
-        // Se onTest não retornar nada, assumimos sucesso se não houver erro, 
-        // ou verificamos se ele retorna explicitamente false em caso de erro interno.
-        if (result === false) {
-          setSyncStatus('error');
-        } else {
-          setSyncStatus('success');
-        }
-      } catch (err) {
-        setSyncStatus('error');
-      }
-      setTimeout(() => setSyncStatus('idle'), 5000);
-    };
-
-    return (
-      <div className="setting-row">
-        <div className="setting-info">
-          <h3>{label}</h3>
-          <p>{description}</p>
-        </div>
-        <div className="integration-input-group">
-          <div className="input-with-eye">
-            <input
-              type={showKey ? "text" : "password"}
-              className="glass-input api-key-input"
-              value={value || ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                setConfig(prev => ({ ...prev, [field]: val }));
-                setSyncStatus('idle');
-              }}
-              placeholder={placeholder || "Inserir API Key..."}
-              autoComplete="new-password"
-            />
-            <button
-              className="eye-btn"
-              onClick={() => setShowKey(!showKey)}
-              title={showKey ? "Esconder" : "Mostrar"}
-            >
-              {showKey ? '👁️‍🗨️' : '👁️'}
-            </button>
-          </div>
-          <button
-            className={`test-api-btn glass sync-mode ${syncStatus}`}
-            onClick={handleSync}
-            disabled={syncStatus === 'loading'}
-          >
-            {syncStatus === 'loading' ? '...' :
-              syncStatus === 'success' ? 'Sincronizado ✅' :
-                syncStatus === 'error' ? 'Erro ❌' : 'Sincronizar'}
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="settings-page fade-in">
@@ -922,12 +963,18 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
 
               {isAutoMode ? (
                 <div className="auto-mode-info fade-in">
-                  <p>Clique abaixo para autorizar o acesso à sua conta. Você será redirecionado para o Google.</p>
+                  <p>
+                    {newConn.provider === 'antigravity' 
+                      ? 'Clique abaixo para conectar usando as credenciais do seu terminal local. A Nebula Bridge precisa estar ligada.'
+                      : 'Clique abaixo para autorizar o acesso à sua conta. Você será redirecionado para o Google.'}
+                  </p>
 
                   {!isWaitingForCode ? (
                     <button className="btn-premium-action w-full" onClick={handleOAuthStart}>
-                      <span className="material-symbols-outlined">link</span>
-                      Conectar com Google
+                      <span className="material-symbols-outlined">
+                        {newConn.provider === 'antigravity' ? 'terminal' : 'link'}
+                      </span>
+                      {newConn.provider === 'antigravity' ? 'Conectar Localmente (Bridge)' : 'Conectar com Google'}
                     </button>
                   ) : (
                     <div className="code-input-area fade-in">
@@ -969,7 +1016,13 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       placeholder="Cole seu token aqui..."
                       value={newConn.access_token}
                       onChange={(e) => setNewConn({ ...newConn, access_token: e.target.value })}
+                      disabled={newConn.provider === 'antigravity'}
                     />
+                    {newConn.provider === 'antigravity' && (
+                      <small style={{ color: '#fbbf24', marginTop: '4px', display: 'block' }}>
+                        Para o Antigravity, use o modo "Automático (OAuth)" para conectar via Nebula Bridge. Tokens manuais expiram em 1h.
+                      </small>
+                    )}
                   </div>
                 </div>
               )}

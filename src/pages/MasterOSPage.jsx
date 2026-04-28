@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { masterService } from '../services/masterService';
 import './MasterOSPage.css';
 
-const MasterOSPage = ({ config, setConfig, onSave, globalSettings }) => {
+const MasterOSPage = ({ config, setConfig, onSave, globalSettings, session }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [realStats, setRealStats] = useState({
@@ -61,9 +61,10 @@ const MasterOSPage = ({ config, setConfig, onSave, globalSettings }) => {
   const handleSaveConnection = async (provider) => {
     const token = providerTokens[provider];
     if (!token) return alert('Insira um token válido');
+    if (!session?.user?.id) return alert('Usuário não autenticado');
     
     setLoading(true);
-    const res = await masterService.saveProviderConnection(provider, token);
+    const res = await masterService.saveProviderConnection(session.user.id, provider, token, []);
     if (res.success) {
       alert('Conexão salva com sucesso!');
       fetchDashboardData();

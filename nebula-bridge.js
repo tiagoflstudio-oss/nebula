@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import si from 'systeminformation';
 import os from 'os';
+import { exec } from 'child_process';
 
 const app = express();
 const port = 3001;
@@ -127,6 +128,17 @@ app.post('/api/antigravity', async (req, res) => {
     console.error('API Proxy Error:', error);
     return res.status(500).json({ error: error.message });
   }
+});
+
+// Endpoint para renovação de Token usando a máquina local
+app.post('/api/antigravity/refresh-local-token', (req, res) => {
+  exec('gcloud auth print-access-token', (error, stdout, stderr) => {
+    if (error) {
+      console.error("Erro ao gerar token ADC:", stderr);
+      return res.status(500).json({ error: 'Falha ao obter token via gcloud. O Google Cloud CLI está instalado?' });
+    }
+    res.json({ access_token: stdout.trim() });
+  });
 });
 
 app.listen(port, () => {

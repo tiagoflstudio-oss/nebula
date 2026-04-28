@@ -11,39 +11,43 @@ const ProjectPage = ({ projectId, onSelectChat }) => {
   const [instructions, setInstructions] = useState('');
 
   useEffect(() => {
+    let mounted = true;
+    const fetchProjectData = async () => {
+      setLoading(true);
+      try {
+        const { data: projData, error: projError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .single();
+        
+        if (projError) throw projError;
+        if (!mounted) return;
+        setProject(projData);
+        setInstructions(projData.instructions || '');
+
+        const { data: chatData, error: chatError } = await supabase
+          .from('chats')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: false });
+        
+        if (chatError) throw chatError;
+        if (mounted) setChats(chatData);
+
+      } catch (error) {
+        console.error('Erro ao buscar dados do projeto:', error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
     if (projectId) {
       fetchProjectData();
     }
+    
+    return () => { mounted = false; };
   }, [projectId]);
-
-  const fetchProjectData = async () => {
-    setLoading(true);
-    try {
-      const { data: projData, error: projError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single();
-      
-      if (projError) throw projError;
-      setProject(projData);
-      setInstructions(projData.instructions || '');
-
-      const { data: chatData, error: chatError } = await supabase
-        .from('chats')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
-      
-      if (chatError) throw chatError;
-      setChats(chatData);
-
-    } catch (error) {
-      console.error('Erro ao buscar dados do projeto:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSaveInstructions = async () => {
     try {

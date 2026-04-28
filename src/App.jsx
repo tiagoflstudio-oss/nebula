@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
@@ -8,25 +8,25 @@ import AdminPanel from './components/AdminPanel.jsx';
 import Navbar from './components/Navbar.jsx';
 import Sidebar from './components/Sidebar';
 import Auth from './components/Auth';
-import AdminPage from './pages/AdminPage';
-import SettingsPage from './pages/SettingsPage';
-import ProjectPage from './pages/ProjectPage';
-import OptimizerPage from './pages/OptimizerPage';
-import ProjectsListPage from './pages/ProjectsListPage';
-import AllChatsPage from './pages/AllChatsPage';
-import EngineerPage from './pages/EngineerPage';
-import SupportPage from './pages/SupportPage';
-import QuotaPage from './pages/QuotaPage';
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ProjectPage = lazy(() => import('./pages/ProjectPage'));
+const OptimizerPage = lazy(() => import('./pages/OptimizerPage'));
+const ProjectsListPage = lazy(() => import('./pages/ProjectsListPage'));
+const AllChatsPage = lazy(() => import('./pages/AllChatsPage'));
+const EngineerPage = lazy(() => import('./pages/EngineerPage'));
+const SupportPage = lazy(() => import('./pages/SupportPage'));
+const QuotaPage = lazy(() => import('./pages/QuotaPage'));
 import Modal from './components/Modal';
-import MasterOSPage from './pages/MasterOSPage';
-import PicoClawPage from './pages/PicoClawPage';
-import CronManagerPage from './pages/CronManagerPage';
-import AuditHubPage from './pages/AuditHubPage';
-import CodeSandboxPage from './pages/CodeSandboxPage';
-import MCPExplorerPage from './pages/MCPExplorerPage';
-import OrchestrationHubPage from './pages/OrchestrationHubPage';
-import LLMHubPage from './pages/LLMHubPage';
-import RagMasterPage from './pages/RagMasterPage';
+const MasterOSPage = lazy(() => import('./pages/MasterOSPage'));
+const PicoClawPage = lazy(() => import('./pages/PicoClawPage'));
+const CronManagerPage = lazy(() => import('./pages/CronManagerPage'));
+const AuditHubPage = lazy(() => import('./pages/AuditHubPage'));
+const CodeSandboxPage = lazy(() => import('./pages/CodeSandboxPage'));
+const MCPExplorerPage = lazy(() => import('./pages/MCPExplorerPage'));
+const OrchestrationHubPage = lazy(() => import('./pages/OrchestrationHubPage'));
+const LLMHubPage = lazy(() => import('./pages/LLMHubPage'));
+const RagMasterPage = lazy(() => import('./pages/RagMasterPage'));
 import { exchangeCode } from './services/oauthService';
 import { masterService } from './services/masterService';
 
@@ -188,18 +188,26 @@ function App() {
       }
 
       // Busca configuração global (Prioridade: Admin > Primeiro VIP)
-      const { data: globalData } = await supabase
+      // Busca até 5 admins/vips para encontrar aquele que realmente tem as chaves configuradas
+      const { data: globalAdmins } = await supabase
         .from('profiles')
         .select('settings')
         .or('role.eq.admin,role.eq.vip')
         .order('role', { ascending: true }) // admin vem antes de vip alfabeticamente
         .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .limit(5);
 
-      if (globalData?.settings) {
-        console.log("🌐 Nebula: Cérebro Mestre Global detectado");
-        setGlobalSettings(globalData.settings);
+      if (globalAdmins && globalAdmins.length > 0) {
+        // Prioriza encontrar um admin que já tenha configurado o Cérebro Mestre (global_api_key)
+        const activeGlobalAdmin = globalAdmins.find(admin => admin.settings && admin.settings.global_api_key);
+        
+        if (activeGlobalAdmin) {
+          console.log("🌐 Nebula: Cérebro Mestre Global ativo detectado");
+          setGlobalSettings(activeGlobalAdmin.settings);
+        } else if (globalAdmins[0].settings) {
+          console.log("🌐 Nebula: Cérebro Mestre Global base detectado");
+          setGlobalSettings(globalAdmins[0].settings);
+        }
       }
 
       // Busca estatísticas para o Master OS (Apenas para Admin/VIP)
@@ -235,6 +243,7 @@ function App() {
         );
       }
 
+      setConfig(newConfig);
       setGlobalSettings(newConfig);
       console.log("✅ Nebula: Configurações e Infraestrutura sincronizadas");
       return true;
@@ -441,6 +450,7 @@ function App() {
           onSave={handleSaveConfig}
           masterStats={masterStats}
           globalSettings={globalSettings}
+          session={session}
         />
       );
     }
@@ -555,7 +565,9 @@ function App() {
             onToggleTheme={toggleTheme}
           />
           <div className="main-content">
-            {renderContent()}
+            <Suspense fallback={<div className="page-loading" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="nebula-spinner"></div></div>}>
+              {renderContent()}
+            </Suspense>
           </div>
         </div>
       </div>

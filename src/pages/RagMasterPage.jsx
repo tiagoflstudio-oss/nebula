@@ -12,37 +12,7 @@ const RagMasterPage = () => {
   const [selectedBaseId, setSelectedBaseId] = useState(null);
   const [loadingBases, setLoadingBases] = useState(true);
 
-  useEffect(() => {
-    fetchBases();
-  }, []);
-
-  const fetchBases = async () => {
-    setLoadingBases(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      const { data, error } = await supabase
-        .from('knowledge_bases')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBases(data || []);
-
-      if (data && data.length > 0 && !selectedBaseId) {
-        setSelectedBaseId(data[0].id);
-        fetchDocuments(data[0].id);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar bases:", err);
-    } finally {
-      setLoadingBases(false);
-    }
-  };
-
-  const fetchDocuments = async (baseId) => {
+  const fetchDocuments = React.useCallback(async (baseId) => {
     try {
       const { data, error } = await supabase
         .from('knowledge_documents')
@@ -66,7 +36,50 @@ const RagMasterPage = () => {
     } catch (err) {
       console.error("Erro ao buscar documentos:", err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadBases = async () => {
+      setLoadingBases(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { data, error } = await supabase
+          .from('knowledge_bases')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        if (!mounted) return;
+        
+        setBases(data || []);
+
+        if (data && data.length > 0) {
+          setSelectedBaseId(prev => {
+            if (!prev) {
+              fetchDocuments(data[0].id);
+              return data[0].id;
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao buscar bases:", err);
+      } finally {
+        if (mounted) setLoadingBases(false);
+      }
+    };
+    
+    loadBases();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [fetchDocuments]);
+
 
   const handleCreateBase = async () => {
     const name = prompt("Nome da nova base de conhecimento:");

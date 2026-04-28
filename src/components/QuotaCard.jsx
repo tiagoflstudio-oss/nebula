@@ -60,7 +60,7 @@ const QuotaCard = ({ connection, data, loading, error, onRefresh, onDelete, onEd
         ) : error ? (
           <div className="error-state">
             <span className="material-symbols-outlined">error</span>
-            <p>{error}</p>
+            <p>{error.includes('Failed to fetch') || error.includes('Proxy') ? 'A Nebula Bridge está desligada. Execute "npm run bridge" no terminal.' : error}</p>
           </div>
         ) : data?.quotas?.length > 0 ? (
           <div className="quota-list">
@@ -75,19 +75,21 @@ const QuotaCard = ({ connection, data, loading, error, onRefresh, onDelete, onEd
                 <div key={idx} className="quota-item">
                   <div className="quota-header">
                     <span className="quota-name">{quota.name}</span>
-                    <span className="quota-values">{quota.total - quota.used} / {quota.total}</span>
+                    <span className="quota-values">
+                      {quota.isUnlimited ? '∞ Ilimitado' : `${quota.total - quota.used} / ${quota.total}`}
+                    </span>
                   </div>
                   <div className="progress-container">
                     <div 
-                      className="progress-bar" 
+                      className={`progress-bar ${quota.isUnlimited ? 'unlimited' : ''}`} 
                       style={{ 
-                        width: `${percentage}%`,
-                        backgroundColor: getStatusColor(percentage)
+                        width: quota.isUnlimited ? '100%' : `${percentage}%`,
+                        backgroundColor: quota.isUnlimited ? '#8b5cf6' : getStatusColor(percentage)
                       }}
                     ></div>
                   </div>
                   <div className="quota-footer">
-                    <span className="percentage">{percentage}% disponível</span>
+                    <span className="percentage">{quota.isUnlimited ? 'Plano Enterprise' : `${percentage}% disponível`}</span>
                     {reset && <span className="reset-time">Reseta em {reset}</span>}
                   </div>
                 </div>

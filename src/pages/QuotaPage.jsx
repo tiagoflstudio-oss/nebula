@@ -16,12 +16,7 @@ const QuotaPage = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState('external'); // 'external' or 'system'
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchConnections();
-    fetchSystemUsage();
-  }, []);
-
-  const fetchSystemUsage = async () => {
+  const fetchSystemUsage = React.useCallback(async () => {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -34,34 +29,9 @@ const QuotaPage = ({ onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchConnections = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('provider_connections')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setConnections(data || []);
-      
-      // Fetch initial quotas
-      data?.forEach(conn => {
-        if (conn.is_active) {
-          fetchQuota(conn);
-        }
-      });
-    } catch (err) {
-      console.error('Erro ao buscar conexões:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchQuota = async (connection) => {
+  const fetchQuota = React.useCallback(async (connection) => {
     setCardLoading(prev => ({ ...prev, [connection.id]: true }));
     setCardErrors(prev => ({ ...prev, [connection.id]: null }));
     try {
@@ -70,8 +40,6 @@ const QuotaPage = ({ onNavigate }) => {
         setCardErrors(prev => ({ ...prev, [connection.id]: usage.error }));
       } else {
         setQuotaData(prev => ({ ...prev, [connection.id]: usage }));
-        // Se a cota veio, pode ser que o token tenha sido renovado silenciosamente
-        // Vamos atualizar as conexões em segundo plano
         const { data } = await supabase
           .from('provider_connections')
           .select('*')
@@ -84,7 +52,36 @@ const QuotaPage = ({ onNavigate }) => {
     } finally {
       setCardLoading(prev => ({ ...prev, [connection.id]: false }));
     }
-  };
+  }, []);
+
+  const fetchConnections = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('provider_connections')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setConnections(data || []);
+      
+      data?.forEach(conn => {
+        if (conn.is_active) {
+          fetchQuota(conn);
+        }
+      });
+    } catch (err) {
+      console.error('Erro ao buscar conexões:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchQuota]);
+
+  useEffect(() => {
+    fetchConnections();
+    fetchSystemUsage();
+  }, [fetchConnections, fetchSystemUsage]);
 
   const handleRefreshAll = () => {
     connections.forEach(conn => {

@@ -3,13 +3,8 @@
  * Adapted from 9Router/open-sse
  */
 
-const ANTIGRAVITY_CONFIG = {
-  quotaApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
-  loadProjectApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
-  userAgent: "antigravity/0.0.1",
-};
-
 import { refreshProviderToken } from './oauthService';
+import { supabase } from '../lib/supabaseClient';
 
 /**
  * Get usage data for a provider connection
@@ -52,7 +47,38 @@ export async function getUsageForProvider(connection) {
     // 2. Retry once if 401 Unauthorized
     if (error.message.includes('401') || error.message.includes('Unauthorized')) {
       console.log(`⚠️ Erro 401 em ${provider}. Tentando refresh forçado...`);
-      const newToken = await refreshProviderToken(id);
+      
+      let newToken = null;
+
+      // Especial Antigravity: tentar obter do host gcloud CLI
+      if (provider === "antigravity") {
+        try {
+          console.log("🔄 Tentando gerar novo token ADC via host CLI para Antigravity...");
+          const adcRes = await fetch('/api/antigravity/refresh-local-token', { method: 'POST' });
+          if (adcRes.ok) {
+            const data = await adcRes.json();
+            if (data.access_token) {
+              newToken = data.access_token;
+              // Salvar no Supabase silenciosamente para estabilidade futura
+              await supabase
+                .from('provider_connections')
+                .update({ 
+                  access_token: newToken,
+                  expires_at: new Date(Date.now() + 3500000).toISOString(), // 58 minutos
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', id);
+            }
+          }
+        } catch (e) {
+          console.warn("Falha ao recuperar token ADC:", e);
+        }
+      }
+
+      if (!newToken) {
+        newToken = await refreshProviderToken(id);
+      }
+
       if (newToken) {
         try {
           switch (provider) {
@@ -150,7 +176,7 @@ async function getAntigravityUsage(accessToken) {
       planName = subInfo?.currentTier?.name || "Premium";
     }
   } catch (e) {
-    console.warn("⚠️ Não foi possível carregar info do projeto Antigravity via Proxy.");
+    console.warn("⚠️ Não foi possível carregar info do projeto Antigravity via Proxy.", e);
   }
 
   // 2. Fetch Quotas via Proxy
@@ -165,53 +191,46 @@ async function getAntigravityUsage(accessToken) {
     body: JSON.stringify({ action: 'fetchQuota', projectId })
   });
 
-  if (!response.ok) throw new Error(`Erro Proxy Antigravity: ${response.status}`);
+  if (!response.ok) {
+    if (response.status === 401) throw new Error("401 Unauthorized");
+    throw new Error(`Erro Proxy Antigravity: ${response.status}`);
+  }
+  
   const data = await response.json();
   const quotas = [];
 
   // Mapeamento flexível por palavras-chave
   const modelMappings = [
-    { key: 'gemini-3.1-pro-high', name: 'Gemini 3.1 Pro (High)', search: 'gemini-3.1-pro' },
-    { key: 'gemini-3.1-pro-low', name: 'Gemini 3.1 Pro (Low)', search: 'gemini-3.1-pro-low' },
-    { key: 'gemini-3-flash', name: 'Gemini 3 Flash', search: 'gemini-3-flash' },
-    { key: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', search: 'sonnet' },
-    { key: 'claude-opus-4-6', name: 'Claude Opus 4.6', search: 'opus' },
-    { key: 'gpt-oss-120b', name: 'GPT-OSS 120B', search: 'gpt-oss' },
+    { name: 'Gemini 2.5 Pro', search: 'gemini-2.5-pro' },
+    { name: 'Gemini 2.0 Flash', search: 'gemini-2.0-flash' },
+    { name: 'Gemini 1.5 Pro', search: 'gemini-1.5-pro' },
+    { name: 'Claude 3.7 Sonnet', search: 'sonnet' },
+    { name: 'Claude 3 Opus', search: 'opus' },
+    { name: 'Llama 3.3', search: 'llama' },
   ];
 
   if (data.models) {
-    // Primeiro tenta match exato
-    for (const mapping of modelMappings) {
-      const modelKey = Object.keys(data.models).find(k => k.includes(mapping.search));
-      if (modelKey) {
-        const info = data.models[modelKey];
-        if (info.quotaInfo) {
-          const fraction = info.quotaInfo.remainingFraction !== undefined ? info.quotaInfo.remainingFraction : 1.0;
-          const total = 1000; // Normalizando para base 1000
-          const remaining = Math.round(total * fraction);
-          
-          quotas.push({
-            name: mapping.name,
-            used: total - remaining,
-            total,
-            resetAt: info.quotaInfo.resetTime,
-            percentage: Math.round(fraction * 100)
-          });
-        }
-      }
-    }
-  }
-
-  // Fallback se não encontrou os modelos específicos mas a API retornou algo
-  if (quotas.length === 0 && data.models) {
-    console.log("🔍 Detectando modelos via fallback...");
-    Object.entries(data.models).slice(0, 6).forEach(([key, info]) => {
+    // Processar todos os modelos até o limite de 8
+    Object.entries(data.models).slice(0, 8).forEach(([key, info]) => {
       if (info.quotaInfo) {
+        // Encontrar um nome amigável ou usar a chave final
+        const mapping = modelMappings.find(m => key.toLowerCase().includes(m.search));
+        let friendlyName = mapping ? mapping.name : key.split('/').pop();
+        
+        // Capitalizar nome de fallback
+        if (!mapping) friendlyName = friendlyName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+        // Se remainingFraction for undefined, geralmente significa "cota ilimitada/enterprise"
+        const isUnlimited = info.quotaInfo.remainingFraction === undefined;
+        const fraction = isUnlimited ? 1.0 : info.quotaInfo.remainingFraction;
+        const used = Math.round((1 - fraction) * 100);
+        
         quotas.push({
-          name: key.split('/').pop(),
-          used: 100 - Math.round((info.quotaInfo.remainingFraction || 0) * 100),
+          name: friendlyName,
+          used: isUnlimited ? 0 : used,
           total: 100,
-          resetAt: info.quotaInfo.resetTime
+          resetAt: info.quotaInfo.resetTime,
+          isUnlimited
         });
       }
     });

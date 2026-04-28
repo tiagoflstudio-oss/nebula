@@ -4,17 +4,20 @@ export const masterService = {
   // Obter estatísticas globais para o Dashboard Master
   async getGlobalStats() {
     try {
-      // 1. Conexões Ativas
-      const { count: activeConnections } = await supabase
-        .from('provider_connections')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
+      // 1. Conexões Ativas (Usuários online/ativos recentemente)
+      // Como não temos Supabase Presence configurado globalmente, vamos estimar
+      // com base nos usuários que tiveram alguma atividade nos últimos 15 minutos.
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60000).toISOString();
+      const { data: activeUsersData } = await supabase
+        .from('usage_logs')
+        .select('user_id')
+        .gt('created_at', fifteenMinutesAgo);
+      
+      const activeConnections = new Set(activeUsersData?.map(u => u.user_id)).size || 0;
 
-      // 2. Clientes Master (Total de usuários)
-      // Nota: Em um ambiente real, poderíamos ter uma tabela de 'clients' específica.
-      // Por enquanto, vamos retornar um valor base ou tentar contar perfis se houver uma tabela de profiles.
+      // 2. Clientes Master (Total de usuários registrados na plataforma)
       const { count: clientCount } = await supabase
-        .from('user_quotas')
+        .from('profiles')
         .select('*', { count: 'exact', head: true });
 
       // 3. Uso de Tokens nas últimas 24h
@@ -121,17 +124,33 @@ export const masterService = {
   // Listar todos os usuários e suas cotas
   async getClients() {
     try {
-      const { data, error } = await supabase
-        .from('user_quotas')
-        .select(`
-          user_id,
-          total_limit,
-          used_tokens,
-          last_reset
-        `);
+      // Busca todos os perfis registrados
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, role, full_name');
       
-      if (error) throw error;
-      return data || [];
+      if (profilesError) throw profilesError;
+
+      // Busca as cotas existentes
+      const { data: quotas, error: quotasError } = await supabase
+        .from('user_quotas')
+        .select('user_id, total_limit, used_tokens');
+        
+      if (quotasError) throw quotasError;
+
+      // Mescla os dados para exibir todos os usuários
+      const clients = profiles.map(profile => {
+        const userQuota = quotas?.find(q => q.user_id === profile.id);
+        return {
+          user_id: profile.id,
+          name: profile.full_name || 'Sem nome',
+          role: profile.role,
+          used_tokens: userQuota?.used_tokens || 0,
+          total_limit: userQuota?.total_limit || 1000000 // Limite padrão visual se ainda não tem registro
+        };
+      });
+
+      return clients || [];
     } catch (err) {
       console.error('Erro ao buscar clientes:', err);
       return [];

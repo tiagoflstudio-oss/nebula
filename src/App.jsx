@@ -405,9 +405,10 @@ function App() {
       );
     }
 
-    if (selectedChatId === 'settings' || selectedPage === 'settings') {
+    if (selectedChatId === 'settings' || selectedPage === 'settings' || selectedPage === 'settings-conexoes') {
       return (
         <SettingsPage
+          initialSection={selectedPage === 'settings-conexoes' ? 'conexoes' : 'geral'}
           config={config}
           setConfig={setConfig}
           userRole={userRole}
@@ -422,7 +423,7 @@ function App() {
     if (selectedPage === 'engineer') return <EngineerPage config={config} session={session} />;
     if (selectedPage === 'llm-hub') return <LLMHubPage config={config} globalSettings={globalSettings} userRole={userRole} />;
     if (selectedPage === 'support') return <SupportPage config={config} session={session} />;
-    if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings')} />;
+    if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings-conexoes')} />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;
     if (selectedPage === 'picoclaw') return <PicoClawPage config={config} session={session} onSelectPage={setSelectedPage} />;
     if (selectedPage === 'cron') return <CronManagerPage config={config} />;

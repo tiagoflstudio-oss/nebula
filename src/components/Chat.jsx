@@ -185,10 +185,10 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
         );
 
       const activeKey = isGlobalIA ? (
-          provider === 'openai' ? globalSettings?.openai_key :
-          provider === 'anthropic' ? globalSettings?.anthropic_key :
-          provider === 'google' ? globalSettings?.google_key :
-          provider === 'openrouter' ? globalSettings?.openrouter_key :
+          provider === 'openai' ? (globalSettings?.global_openai_key || globalSettings?.global_api_key) :
+          provider === 'anthropic' ? (globalSettings?.global_anthropic_key || globalSettings?.global_api_key) :
+          provider === 'google' ? (globalSettings?.global_google_key || globalSettings?.global_api_key) :
+          provider === 'openrouter' ? (globalSettings?.global_openrouter_key || globalSettings?.global_api_key) :
           globalSettings?.global_api_key
         ) : (
           provider === 'openai' ? ollamaConfig.openai_key :
@@ -627,9 +627,10 @@ const Chat = ({ ollamaConfig, setConfig, chatId, session, onChatCreated, globalS
     }
     const openrouterKey = mode === 'global' ? configSource.global_openrouter_key : configSource.openrouter_key;
     if (openrouterKey) {
+      const openRouterModels = (mode === 'global' ? configSource.fetched_global_openrouter_models : configSource.fetched_openrouter_models) || ['meta-llama/llama-3-70b-instruct', 'mistralai/mixtral-8x7b-instruct'];
       const seen = new Set();
       const uniqueModels = [];
-      rawModels.forEach(m => {
+      openRouterModels.forEach(m => {
         const display = formatModelName(m);
         if (!seen.has(display)) {
           seen.add(display);

@@ -33,7 +33,7 @@ const MasterOSPage = ({ config, setConfig, onSave, globalSettings }) => {
       // Sincroniza visualmente com as chaves configuradas no Cérebro Mestre (IA Global)
       const mergedProvs = provs.map(p => {
         const isGlobalMaster = globalSettings?.global_api_key && globalSettings?.global_provider === p.id;
-        const hasDirectKey = globalSettings?.[`${p.id}_key` || ''];
+        const hasDirectKey = !!globalSettings?.[`global_${p.id}_key`];
         
         if (isGlobalMaster || hasDirectKey) {
           return { ...p, status: 'online' };
@@ -88,7 +88,7 @@ const MasterOSPage = ({ config, setConfig, onSave, globalSettings }) => {
   };
 
   const statsDisplay = [
-    { label: 'Conexões Ativas', value: realStats.activeConnections.toString(), icon: 'link', color: '#10b981' },
+    { label: 'Usuários Online', value: realStats.activeConnections.toString(), icon: 'monitoring', color: '#10b981' },
     { label: 'Clientes Master', value: realStats.clientCount.toString(), icon: 'group', color: '#8b5cf6' },
     { label: 'Uso de Tokens (24h)', value: realStats.totalTokens24h.toLocaleString(), icon: 'database', color: '#3b82f6' },
     { label: 'Performance Global', value: realStats.performance, icon: 'bolt', color: '#fbbf24' },
@@ -261,18 +261,21 @@ const MasterOSPage = ({ config, setConfig, onSave, globalSettings }) => {
              <div className="clients-table-wrapper glass">
                <table className="clients-table">
                  <thead>
-                   <tr>
-                     <th>ID do Usuário</th>
-                     <th>Tokens Usados</th>
+                    <tr>
+                      <th>Nome / ID</th>
+                      <th>Tokens Usados</th>
                      <th>Limite Total</th>
                      <th>Ações</th>
                    </tr>
                  </thead>
                  <tbody>
                    {clients.map(client => (
-                     <tr key={client.user_id}>
-                       <td><small>{client.user_id}</small></td>
-                       <td><strong>{client.used_tokens.toLocaleString()}</strong></td>
+                      <tr key={client.user_id}>
+                        <td>
+                          <strong>{client.name}</strong><br/>
+                          <small style={{opacity: 0.6}}>{client.user_id}</small>
+                        </td>
+                        <td><strong>{client.used_tokens.toLocaleString()}</strong></td>
                        <td>{client.total_limit.toLocaleString()}</td>
                        <td>
                          <button className="btn-edit-quota" onClick={() => handleUpdateLimit(client.user_id, client.total_limit)}>

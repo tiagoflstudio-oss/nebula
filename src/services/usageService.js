@@ -7,6 +7,9 @@ import { supabase } from '../lib/supabaseClient';
 const PRICING = {
   'gpt-4o': { input: 5, output: 15 }, // per 1M tokens
   'gpt-4-turbo': { input: 10, output: 30 },
+  'gpt-4o-mini': { input: 0.15, output: 0.60 },
+  'gpt-4.1-mini': { input: 0.15, output: 0.60 },
+  'gpt-3.5-turbo': { input: 0.50, output: 1.50 },
   'claude-3-5-sonnet-20240620': { input: 3, output: 15 },
   'gemini-1.5-pro': { input: 3.5, output: 10.5 },
   'default': { input: 0, output: 0 }
@@ -40,6 +43,25 @@ export async function trackUsage(userId, provider, model, tokens) {
       }]);
 
     if (error) throw error;
+    
+    // Atualiza a cota total gasta pelo usuário
+    const { data: quota } = await supabase
+      .from('user_quotas')
+      .select('used_tokens')
+      .eq('user_id', userId)
+      .single();
+      
+    if (quota) {
+      await supabase
+        .from('user_quotas')
+        .update({ used_tokens: Number(quota.used_tokens) + total_tokens })
+        .eq('user_id', userId);
+    } else {
+      await supabase
+        .from('user_quotas')
+        .insert([{ user_id: userId, used_tokens: total_tokens }]);
+    }
+
     console.log(`📊 [Usage Tracker] ${total_tokens} tokens tracked for ${model}`);
   } catch (err) {
     console.error('❌ [Usage Tracker Error]:', err.message);

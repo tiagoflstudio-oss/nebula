@@ -9,7 +9,7 @@ const OAUTH_CONFIGS = {
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     clientId: "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
-    clientSecret: "PLACEHOLDER_SECRET",
+    clientSecret: "",
     scopes: [
       "https://www.googleapis.com/auth/cloud-platform",
       "https://www.googleapis.com/auth/userinfo.email",
@@ -23,7 +23,7 @@ const OAUTH_CONFIGS = {
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
-    clientSecret: "PLACEHOLDER_SECRET",
+    clientSecret: "",
     scopes: [
       "https://www.googleapis.com/auth/cloud-platform",
       "https://www.googleapis.com/auth/userinfo.email",
@@ -77,19 +77,24 @@ export async function exchangeCode(provider, code, clientId, clientSecret, redir
 
   if (!finalClientId) throw new Error(`Client ID não configurado para ${provider}`);
 
+  const params = new URLSearchParams({
+    grant_type: "authorization_code",
+    client_id: finalClientId,
+    code: code,
+    redirect_uri: redirectUri,
+  });
+
+  if (finalClientSecret && finalClientSecret !== "PLACEHOLDER_SECRET") {
+    params.append("client_secret", finalClientSecret);
+  }
+
   const response = await fetch(config.tokenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json",
     },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: finalClientId,
-      client_secret: finalClientSecret || "",
-      code: code,
-      redirect_uri: redirectUri,
-    }),
+    body: params,
   });
 
   if (!response.ok) {

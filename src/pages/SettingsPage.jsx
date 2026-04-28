@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { buildAuthUrl } from '../services/oauthService';
 
-const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalConfig }) => {
-  const [activeSection, setActiveSection] = useState('geral');
+const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalConfig, globalSettings, initialSection }) => {
+  const [activeSection, setActiveSection] = useState(initialSection || 'geral');
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
   const [connections, setConnections] = useState([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
@@ -12,6 +12,12 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [isWaitingForCode, setIsWaitingForCode] = useState(false);
   const [oauthCode, setOauthCode] = useState('');
+
+  React.useEffect(() => {
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
 
   React.useEffect(() => {
     if (activeSection === 'conexoes') {
@@ -721,9 +727,9 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                         onChange={(e) => setConfig(prev => ({ ...prev, global_selected_model: e.target.value }))}
                       >
                         <option value="">Selecione um modelo...</option>
-                        {(config.global_provider === 'openai' ? (config.fetched_global_openai_models || ['gpt-4o', 'gpt-4-turbo']) :
-                          config.global_provider === 'anthropic' ? (config.fetched_global_anthropic_models || ['claude-3-5-sonnet-20240620']) :
-                          config.global_provider === 'google' ? (config.fetched_global_google_models || ['gemini-1.5-pro']) :
+                        {((config.global_provider || 'openai') === 'openai' ? (config.fetched_global_openai_models || ['gpt-4o', 'gpt-4-turbo']) :
+                          (config.global_provider || 'openai') === 'anthropic' ? (config.fetched_global_anthropic_models || ['claude-3-5-sonnet-20240620']) :
+                          (config.global_provider || 'openai') === 'google' ? (config.fetched_global_google_models || ['gemini-1.5-pro']) :
                           (config.fetched_global_openrouter_models || ['meta-llama/llama-3-70b-instruct'])
                         ).map(m => (
                           <option key={m} value={m}>{m.toUpperCase()}</option>
@@ -824,16 +830,22 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
                       onClick={async () => {
                         showToast("Gravando Cérebro Mestre no sistema...", "info");
                         // Antes de salvar, garantimos que a chave do provedor mestre seja passada como principal se necessário
-                        const masterKey = config.global_provider === 'openai' ? config.global_openai_key :
-                                          config.global_provider === 'anthropic' ? config.global_anthropic_key :
-                                          config.global_provider === 'google' ? config.global_google_key :
+                        const providerToSave = config.global_provider || 'openai';
+                        const masterKey = providerToSave === 'openai' ? config.global_openai_key :
+                                          providerToSave === 'anthropic' ? config.global_anthropic_key :
+                                          providerToSave === 'google' ? config.global_google_key :
                                           config.global_openrouter_key;
                         
+                        const defaultModel = providerToSave === 'openai' ? 'gpt-4o' : 
+                                             providerToSave === 'anthropic' ? 'claude-3-5-sonnet-20240620' : 
+                                             providerToSave === 'google' ? 'gemini-1.5-pro' : 
+                                             'meta-llama/llama-3-70b-instruct';
+
                         const success = await onSave({ 
                           ...config, 
                           global_api_key: masterKey,
-                          global_provider: config.global_provider || 'openai',
-                          global_selected_model: config.global_selected_model
+                          global_provider: providerToSave,
+                          global_selected_model: config.global_selected_model || defaultModel
                         });
                         
                         if (success) {
@@ -856,7 +868,7 @@ const SettingsPage = ({ config, setConfig, userRole, session, onSave, setModalCo
 
 
 
-              {!['geral', 'conta', 'ia-engine', 'master-os', 'integracoes', 'ia-global', 'nebula-code'].includes(activeSection) && (
+              {!['geral', 'conta', 'ia-engine', 'master-os', 'integracoes', 'ia-global', 'nebula-code', 'conexoes'].includes(activeSection) && (
                 <div className="settings-placeholder">
                   <p>As configurações de <strong>{activeSection}</strong> estarão disponíveis em breve.</p>
                 </div>

@@ -28,14 +28,16 @@ const Navbar = ({ session, userRole, onHome, selectedPage, onSelectPage, onLogin
             Master OS
           </button>
         )}
-        <button 
-          className={`nav-system-btn ${selectedPage === 'picoclaw' ? 'active' : ''}`}
-          onClick={() => onSelectPage('picoclaw')}
-          title="PicoClaw Engine"
-        >
-          <span style={{ fontSize: '1.1rem' }}>🦀</span>
-          PicoClaw
-        </button>
+        {(userRole === 'admin' || userRole === 'vip') && (
+          <button 
+            className={`nav-system-btn ${selectedPage === 'picoclaw' ? 'active' : ''}`}
+            onClick={() => onSelectPage('picoclaw')}
+            title="PicoClaw Engine"
+          >
+            <span style={{ fontSize: '1.1rem' }}>🦀</span>
+            PicoClaw
+          </button>
+        )}
       </div>
       
       <div className="nav-links">

@@ -118,28 +118,26 @@ function formatGitHubQuota(name, quota, resetAt) {
  * Antigravity Usage
  */
 async function getAntigravityUsage(accessToken) {
-  // 1. Get Project ID / Subscription Info
   let projectId = null;
   let planName = "Premium";
 
+  // 1. Get Project ID / Subscription Info via Proxy
   try {
-    const subRes = await fetch(ANTIGRAVITY_CONFIG.loadProjectApiUrl, {
-      method: "POST",
+    const subRes = await fetch('/api/antigravity', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "User-Agent": ANTIGRAVITY_CONFIG.userAgent
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ mode: 1 }),
+      body: JSON.stringify({ action: 'loadProject' })
     });
     
     if (subRes.ok) {
       const subInfo = await subRes.json();
-      console.log("📦 Resposta loadCodeAssist (mode 1):", subInfo);
+      console.log("📦 Resposta loadCodeAssist via Proxy:", subInfo);
       
       let rawId = subInfo?.cloudaicompanionProject || subInfo?.project || subInfo?.project_id || subInfo?.projectId;
 
-      
       // Tentar pegar do allowedTiers se o principal falhar ou for suspeito
       if (!rawId && subInfo.allowedTiers && subInfo.allowedTiers.length > 0) {
         rawId = subInfo.allowedTiers[0].project;
@@ -152,32 +150,22 @@ async function getAntigravityUsage(accessToken) {
       planName = subInfo?.currentTier?.name || "Premium";
     }
   } catch (e) {
-    console.warn("⚠️ Não foi possível carregar info do projeto Antigravity, tentando sem ID.");
+    console.warn("⚠️ Não foi possível carregar info do projeto Antigravity via Proxy.");
   }
 
-  // 2. Fetch Quotas
-  const cleanProjectId = projectId?.replace('projects/', '');
+  // 2. Fetch Quotas via Proxy
+  console.log("📤 Enviando requisição de cota Antigravity via Proxy...");
 
-  const headers = {
-    "Authorization": `Bearer ${accessToken}`,
-    "Content-Type": "application/json",
-    "User-Agent": ANTIGRAVITY_CONFIG.userAgent,
-    "X-Goog-Api-Client": "gl-js/ auth/2.0.0 grpc/1.53.0",
-    "x-goog-user-project": cleanProjectId
-  };
-
-  console.log("📤 Enviando requisição de cota Antigravity (Modo Bypass)...", {
-    url: ANTIGRAVITY_CONFIG.quotaApiUrl,
-    project: cleanProjectId
+  const response = await fetch('/api/antigravity', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: 'fetchQuota', projectId })
   });
 
-  const response = await fetch(ANTIGRAVITY_CONFIG.quotaApiUrl, {
-    method: "POST",
-    headers: headers,
-    body: JSON.stringify({}),
-  });
-
-  if (!response.ok) throw new Error(`Erro Antigravity: ${response.status}`);
+  if (!response.ok) throw new Error(`Erro Proxy Antigravity: ${response.status}`);
   const data = await response.json();
   const quotas = [];
 

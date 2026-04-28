@@ -26,6 +26,7 @@ import CodeSandboxPage from './pages/CodeSandboxPage';
 import MCPExplorerPage from './pages/MCPExplorerPage';
 import OrchestrationHubPage from './pages/OrchestrationHubPage';
 import LLMHubPage from './pages/LLMHubPage';
+import RagMasterPage from './pages/RagMasterPage';
 import { exchangeCode } from './services/oauthService';
 import { masterService } from './services/masterService';
 
@@ -422,6 +423,7 @@ function App() {
     if (selectedPage === 'optimizer') return <OptimizerPage />;
     if (selectedPage === 'engineer') return <EngineerPage config={config} session={session} />;
     if (selectedPage === 'llm-hub') return <LLMHubPage config={config} globalSettings={globalSettings} userRole={userRole} />;
+    if (selectedPage === 'rag-master') return <RagMasterPage />;
     if (selectedPage === 'support') return <SupportPage config={config} session={session} />;
     if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings-conexoes')} />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;

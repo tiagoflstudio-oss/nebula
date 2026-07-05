@@ -15,6 +15,7 @@ const ProjectsListPage = lazy(() => import('./pages/ProjectsListPage'));
 const AllChatsPage = lazy(() => import('./pages/AllChatsPage'));
 const SupportPage = lazy(() => import('./pages/SupportPage'));
 const ObservabilityPage = lazy(() => import('./pages/ObservabilityPage'));
+const AlertsPage = lazy(() => import('./pages/AlertsPage'));
 import Modal from './components/Modal';
 import { masterService } from './services/masterService';
 
@@ -362,6 +363,9 @@ function App() {
     }
     if (selectedPage === 'projects-list') {
       return <ProjectsListPage />;
+    }
+    if (selectedPage === 'alerts') {
+      return <AlertsPage />;
     }
 
     if (selectedProjectId && !selectedChatId) {

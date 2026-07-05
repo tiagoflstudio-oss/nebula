@@ -11,23 +11,11 @@ import Auth from './components/Auth';
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ProjectPage = lazy(() => import('./pages/ProjectPage'));
-const OptimizerPage = lazy(() => import('./pages/OptimizerPage'));
 const ProjectsListPage = lazy(() => import('./pages/ProjectsListPage'));
 const AllChatsPage = lazy(() => import('./pages/AllChatsPage'));
-const EngineerPage = lazy(() => import('./pages/EngineerPage'));
 const SupportPage = lazy(() => import('./pages/SupportPage'));
-const QuotaPage = lazy(() => import('./pages/QuotaPage'));
+const ObservabilityPage = lazy(() => import('./pages/ObservabilityPage'));
 import Modal from './components/Modal';
-const MasterOSPage = lazy(() => import('./pages/MasterOSPage'));
-const PicoClawPage = lazy(() => import('./pages/PicoClawPage'));
-const CronManagerPage = lazy(() => import('./pages/CronManagerPage'));
-const AuditHubPage = lazy(() => import('./pages/AuditHubPage'));
-const CodeSandboxPage = lazy(() => import('./pages/CodeSandboxPage'));
-const MCPExplorerPage = lazy(() => import('./pages/MCPExplorerPage'));
-const OrchestrationHubPage = lazy(() => import('./pages/OrchestrationHubPage'));
-const LLMHubPage = lazy(() => import('./pages/LLMHubPage'));
-const RagMasterPage = lazy(() => import('./pages/RagMasterPage'));
-import { exchangeCode } from './services/oauthService';
 import { masterService } from './services/masterService';
 
 function App() {
@@ -76,7 +64,6 @@ function App() {
     onConfirm: () => { }
   });
 
-  const processingOAuth = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -101,66 +88,7 @@ function App() {
     } else {
       setUserRole('user');
     }
-
-    // Handle OAuth Callback
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    if (code && window.location.pathname === '/callback' && session && !processingOAuth.current) {
-      processingOAuth.current = true;
-      handleOAuthCallback(code);
-    }
   }, [session, selectedProjectId]);
-
-  const handleOAuthCallback = async (code) => {
-    try {
-      const provider = 'antigravity'; // For now, assume antigravity
-      const redirectUri = window.location.origin + '/callback';
-
-      const tokens = await exchangeCode(provider, code, null, null, redirectUri);
-
-      // Save to Supabase
-      const { error } = await supabase
-        .from('provider_connections')
-        .insert([{
-          user_id: session.user.id,
-          provider: provider,
-          name: session.user.email,
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-          expires_at: new Date(Date.now() + (tokens.expires_in * 1000)).toISOString(),
-          settings: {
-            auth_type: 'oauth',
-            email: session.user.email
-          }
-        }]);
-
-      if (error) throw error;
-
-      // Cleanup URL and go to quota tracker
-      window.history.replaceState({}, document.title, "/");
-      setSelectedPage('quota');
-
-      setModalConfig({
-        isOpen: true,
-        title: 'Conexão Realizada!',
-        message: 'Sua conta Google foi conectada com sucesso ao Nebula. O Rastreador de Cota agora está ativo e sincronizado.',
-        type: 'confirm', // Use confirm just for the OK button
-        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
-      });
-    } catch (err) {
-      console.error("Erro no callback OAuth:", err);
-
-      setModalConfig({
-        isOpen: true,
-        title: 'Erro na Conexão',
-        message: 'Não foi possível finalizar a conexão automática: ' + err.message,
-        type: 'confirm',
-        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
-      });
-
-      window.history.replaceState({}, document.title, "/");
-    }
-  };
 
   const fetchProfile = async () => {
     if (!session?.user) return;
@@ -404,17 +332,6 @@ function App() {
   };
 
   const renderContent = () => {
-    if (window.location.pathname === '/callback') {
-      return (
-        <div className="callback-container glass fade-in">
-          <div className="loader-dots">
-            <span></span><span></span><span></span>
-          </div>
-          <p>Finalizando conexão segura...</p>
-        </div>
-      );
-    }
-
     if (selectedChatId === 'settings' || selectedPage === 'settings' || selectedPage === 'settings-conexoes') {
       return (
         <SettingsPage
@@ -429,31 +346,9 @@ function App() {
         />
       );
     }
-    if (selectedPage === 'optimizer') return <OptimizerPage />;
-    if (selectedPage === 'engineer') return <EngineerPage config={config} session={session} />;
-    if (selectedPage === 'llm-hub') return <LLMHubPage config={config} globalSettings={globalSettings} userRole={userRole} />;
-    if (selectedPage === 'rag-master') return <RagMasterPage />;
     if (selectedPage === 'support') return <SupportPage config={config} session={session} />;
-    if (selectedPage === 'quota') return <QuotaPage onNavigate={() => setSelectedPage('settings-conexoes')} />;
+    if (selectedPage === 'observability') return <ObservabilityPage />;
     if (selectedPage === 'admin') return <AdminPage config={config} />;
-    if (selectedPage === 'picoclaw') return <PicoClawPage config={config} session={session} onSelectPage={setSelectedPage} />;
-    if (selectedPage === 'cron') return <CronManagerPage config={config} />;
-    if (selectedPage === 'audit') return <AuditHubPage config={config} />;
-    if (selectedPage === 'sandbox') return <CodeSandboxPage config={config} />;
-    if (selectedPage === 'mcp') return <MCPExplorerPage config={config} />;
-    if (selectedPage === 'orch') return <OrchestrationHubPage config={config} />;
-    if (selectedPage === 'master-os') {
-      return (
-        <MasterOSPage
-          config={config}
-          setConfig={setConfig}
-          onSave={handleSaveConfig}
-          masterStats={masterStats}
-          globalSettings={globalSettings}
-          session={session}
-        />
-      );
-    }
     if (selectedPage === 'all-chats') {
       return (
         <AllChatsPage

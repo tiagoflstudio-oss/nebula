@@ -3,8 +3,15 @@
  * Adapted from 9Router/open-sse
  */
 
-import { refreshProviderToken } from './oauthService';
 import { supabase } from '../lib/supabaseClient';
+
+/**
+ * Mock local temporário para a renovação de tokens legada (OAuth)
+ */
+async function refreshProviderToken(id) {
+  console.warn("OAuth refreshProviderToken desativado devido ao arquivamento do oauthService.");
+  return null;
+}
 
 /**
  * Get usage data for a provider connection

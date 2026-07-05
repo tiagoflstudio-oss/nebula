@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import MasterOS from './MasterOS';
 
 const AdminPanel = ({ config, setConfig }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('ai'); // 'ai' ou 'master'
 
   return (
     <>
@@ -18,66 +16,47 @@ const AdminPanel = ({ config, setConfig }) => {
         </svg>
       </button>
 
-      <div className={`admin-panel glass ${isOpen ? 'open' : ''} ${activeTab === 'master' ? 'wide' : ''}`}>
-        <div className="admin-tabs">
-          <button 
-            className={`tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ai')}
-          >
-            AI Engine
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'master' ? 'active' : ''}`}
-            onClick={() => setActiveTab('master')}
-          >
-            Master OS
-          </button>
-        </div>
-
+      <div className={`admin-panel glass ${isOpen ? 'open' : ''}`}>
         <div className="admin-tab-content">
-          {activeTab === 'ai' && (
-            <div className="fade-in">
-              <h3>Configurações AI</h3>
-              
-              <div className="input-group">
-                <label>IP do Servidor</label>
-                <input 
-                  type="text" 
-                  value={config.ip} 
-                  onChange={(e) => setConfig({...config, ip: e.target.value})}
-                  placeholder="Ex: 192.168.1.100"
-                />
-              </div>
-
-              <div className="input-group">
-                <label>Porta</label>
-                <input 
-                  type="text" 
-                  value={config.port} 
-                  onChange={(e) => setConfig({...config, port: e.target.value})}
-                  placeholder="Padrão: 11434"
-                />
-              </div>
-
-              <div className="input-group">
-                <label>Modelo</label>
-                <select 
-                  value={config.model} 
-                  onChange={(e) => setConfig({...config, model: e.target.value})}
-                >
-                  <option value="llama3">Llama 3</option>
-                  <option value="mistral">Mistral</option>
-                  <option value="phi3">Phi-3</option>
-                </select>
-              </div>
-
-              <p className="status-hint">
-                As alterações são salvas automaticamente.
-              </p>
+          <div className="fade-in">
+            <h3>Configurações AI</h3>
+            
+            <div className="input-group">
+              <label>IP do Servidor</label>
+              <input 
+                type="text" 
+                value={config.ip} 
+                onChange={(e) => setConfig({...config, ip: e.target.value})}
+                placeholder="Ex: 192.168.1.100"
+              />
             </div>
-          )}
 
-          {activeTab === 'master' && <MasterOS />}
+            <div className="input-group">
+              <label>Porta</label>
+              <input 
+                type="text" 
+                value={config.port} 
+                onChange={(e) => setConfig({...config, port: e.target.value})}
+                placeholder="Padrão: 11434"
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Modelo</label>
+              <select 
+                value={config.model} 
+                onChange={(e) => setConfig({...config, model: e.target.value})}
+              >
+                <option value="llama3">Llama 3</option>
+                <option value="mistral">Mistral</option>
+                <option value="phi3">Phi-3</option>
+              </select>
+            </div>
+
+            <p className="status-hint">
+              As alterações são salvas automaticamente.
+            </p>
+          </div>
         </div>
       </div>
     </>

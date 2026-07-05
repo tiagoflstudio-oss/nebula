@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { buildAuthUrl } from '../services/oauthService';
 
 const IntegrationRow = ({ label, description, value, field, placeholder, onTest, setConfig, config }) => {
   const [showKey, setShowKey] = useState(false);

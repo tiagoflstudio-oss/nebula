@@ -153,6 +153,36 @@ serve(async (req) => {
       })
     }
 
+    // 6. Disparar process-alert de forma assíncrona (fire-and-forget)
+    // Evita bloquear a resposta ao cliente — falhas no alerta não afetam a ingestão do log
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const alertPayload = {
+      record: {
+        id:             logData.id,
+        project_id:     projectId,
+        service,
+        level,
+        message,
+        metadata:       metadata || {},
+        trace_id:       trace_id || null,
+        tenant_id:      tenant_id || null,
+        tenant_name:    tenant_name || null,
+        source_project: sourceProject,
+        created_at:     new Date().toISOString()
+      }
+    }
+
+    // Não aguarda (fire-and-forget) para não atrasar a resposta ao cliente
+    fetch(`${supabaseUrl}/functions/v1/process-alert`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${serviceKey}`
+      },
+      body: JSON.stringify(alertPayload)
+    }).catch(err => console.warn('⚠️ process-alert: falha no disparo assíncrono:', err.message))
+
     return new Response(JSON.stringify({ success: true, id: logData.id }), {
       status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

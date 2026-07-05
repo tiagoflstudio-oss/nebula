@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { observabilityService } from '../services/observabilityService';
 import { sentryService } from '../services/sentryService';
 import { diagnoseService } from '../services/diagnoseService';
+import { projectService } from '../services/projectService';
 import './ObservabilityPage.css';
 
 const ObservabilityPage = () => {
@@ -12,6 +13,10 @@ const ObservabilityPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Estados de Projetos
+  const [projects, setProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState('all');
+
   // Estados de Filtro
   const [selectedService, setSelectedService] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
@@ -37,6 +42,19 @@ const ObservabilityPage = () => {
     liveUpdateRef.current = liveUpdate;
   }, [liveUpdate]);
 
+  // Carrega lista de projetos monitorados no início
+  useEffect(() => {
+    const loadProjectsList = async () => {
+      try {
+        const data = await projectService.getProjects();
+        setProjects(data);
+      } catch (err) {
+        console.warn('⚠️ Falha ao carregar lista de projetos:', err);
+      }
+    };
+    loadProjectsList();
+  }, []);
+
   // Função para mapear o intervalo de tempo selecionado em datas ISO
   const getDateRange = useCallback((option) => {
     const now = new Date();
@@ -59,6 +77,7 @@ const ObservabilityPage = () => {
     setError(null);
     try {
       const filters = {
+        projectId: selectedProjectId,
         service: selectedService,
         level: selectedLevel,
         tenant_id: tenantFilter,
@@ -69,10 +88,11 @@ const ObservabilityPage = () => {
       // 1. Busca os logs de negócio no banco Supabase
       const { data: dbLogs } = await observabilityService.getEvents(filters);
 
-      // 2. Busca erros técnicos na API (ou mock) do Sentry
+      // 2. Busca erros técnicos no Sentry com base nas credenciais do projeto selecionado
       let sentryLogs = [];
       try {
-        sentryLogs = await sentryService.getRecentSentryIssues();
+        const activeProjectConfig = projects.find(p => p.id === selectedProjectId);
+        sentryLogs = await sentryService.getRecentSentryIssues(activeProjectConfig || {});
         
         // Aplica os filtros ativos de nível e busca nos eventos do Sentry para manter a timeline coerente
         if (selectedLevel) {
@@ -102,8 +122,8 @@ const ObservabilityPage = () => {
       const servicesInLogs = [...new Set(dbLogs.map(log => log.service))].filter(Boolean);
       setAvailableServices(prev => [...new Set([...prev, ...servicesInLogs])]);
 
-      // Atualiza os cards de estatísticas
-      const summary = await observabilityService.getSummaryStats();
+      // Atualiza os cards de estatísticas usando o filtro de projetos
+      const summary = await observabilityService.getSummaryStats(selectedProjectId);
       setStats(summary);
     } catch (err) {
       console.error('Erro ao buscar logs de observabilidade:', err);
@@ -111,13 +131,13 @@ const ObservabilityPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedService, selectedLevel, tenantFilter, searchTerm, dateRangeOption, getDateRange]);
+  }, [selectedProjectId, selectedService, selectedLevel, tenantFilter, searchTerm, dateRangeOption, getDateRange, projects]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
 
-  // Efeito para o Realtime do Supabase
+  // Efeito para o Realtime do Supabase (roda novamente se mudar o projeto para aplicar o filtro Postgres correto)
   useEffect(() => {
     const handleNewLog = (newLog) => {
       if (liveUpdateRef.current) {
@@ -156,9 +176,9 @@ const ObservabilityPage = () => {
       }
     };
 
-    const unsubscribe = observabilityService.subscribeToEvents(handleNewLog);
+    const unsubscribe = observabilityService.subscribeToEvents(handleNewLog, selectedProjectId);
     return () => unsubscribe();
-  }, []);
+  }, [selectedProjectId]);
 
   // Busca logs correlacionados por trace_id nas duas fontes (Supabase e Sentry)
   const handleSelectEvent = async (event) => {
@@ -174,10 +194,11 @@ const ObservabilityPage = () => {
       // 1. Busca logs correlacionados no Supabase
       const dbLogs = await observabilityService.getEventsByTraceId(event.trace_id);
       
-      // 2. Busca logs correlacionados no Sentry
+      // 2. Busca logs correlacionados no Sentry usando a config do projeto selecionado
       let sentryLogs = [];
       try {
-        const allSentry = await sentryService.getRecentSentryIssues();
+        const activeProjectConfig = projects.find(p => p.id === selectedProjectId);
+        const allSentry = await sentryService.getRecentSentryIssues(activeProjectConfig || {});
         sentryLogs = allSentry.filter(l => l.trace_id === event.trace_id);
       } catch (sentryErr) {
         console.warn('Erro ao correlacionar logs do Sentry:', sentryErr);
@@ -240,13 +261,38 @@ const ObservabilityPage = () => {
   const isEligibleForDiagnosis = selectedEvent && 
     (selectedEvent.source === 'sentry' || ['error', 'critical'].includes(selectedEvent.level));
 
+  const activeProject = projects.find(p => p.id === selectedProjectId);
+
   return (
     <div className="page-container observability-page fade-in">
       <header className="page-header">
         <div className="header-content">
           <h1>Central de <span>Observabilidade</span></h1>
-          <p>Monitore eventos de negócio, falhas operacionais e trace de requisições do Confia.</p>
+          
+          {/* Seletor de Projetos principal */}
+          <div className="project-selector-header">
+            <span className="material-symbols-outlined folder-icon">folder</span>
+            <select 
+              value={selectedProjectId} 
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="project-select-dropdown"
+            >
+              <option value="all">Todos os Projetos</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            
+            {/* Badge de status rápido de uptime */}
+            {selectedProjectId !== 'all' && activeProject?.uptime_url && (
+              <span className="uptime-live-badge">
+                <span className="status-dot live"></span>
+                Ping Ativo
+              </span>
+            )}
+          </div>
         </div>
+
         <div className="header-actions">
           <button 
             className={`btn-live-toggle glass ${liveUpdate ? 'active' : ''}`} 

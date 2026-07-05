@@ -5,16 +5,18 @@ export const observabilityService = {
    * Busca logs de eventos com filtros
    */
   async getEvents(filters = {}) {
-    const { service, level, tenant_id, search, dateRange } = filters;
+    const { projectId, service, level, tenant_id, search, dateRange } = filters;
     
     let query = supabase
       .from('audit_logs')
       .select('*', { count: 'exact' });
 
-    // Restringir ao Confia
-    query = query.eq('source_project', 'confia');
+    // Se projectId for definido e diferente de 'all', filtra por ele
+    if (projectId && projectId !== 'all') {
+      query = query.eq('project_id', projectId);
+    }
 
-    if (service) {
+    if (service && service !== 'sentry') {
       query = query.eq('service', service);
     }
 
@@ -74,37 +76,49 @@ export const observabilityService = {
   /**
    * Coleta métricas de resumo das últimas 24 horas para os cards do topo
    */
-  async getSummaryStats() {
+  async getSummaryStats(projectId = null) {
     try {
       const past24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       
       // 1. Total de eventos em 24h
-      const { count: total24h, error: errTotal } = await supabase
+      let totalQuery = supabase
         .from('audit_logs')
         .select('*', { count: 'exact', head: true })
-        .eq('source_project', 'confia')
         .gte('created_at', past24h);
 
+      if (projectId && projectId !== 'all') {
+        totalQuery = totalQuery.eq('project_id', projectId);
+      }
+
+      const { count: total24h, error: errTotal } = await totalQuery;
       if (errTotal) throw errTotal;
 
       // 2. Erros e Críticos em 24h
-      const { count: errors24h, error: errErrors } = await supabase
+      let errorsQuery = supabase
         .from('audit_logs')
         .select('*', { count: 'exact', head: true })
-        .eq('source_project', 'confia')
         .in('level', ['error', 'critical'])
         .gte('created_at', past24h);
 
+      if (projectId && projectId !== 'all') {
+        errorsQuery = errorsQuery.eq('project_id', projectId);
+      }
+
+      const { count: errors24h, error: errErrors } = await errorsQuery;
       if (errErrors) throw errErrors;
 
       // 3. Top serviços com erros (obtidos agregando os erros das últimas 24h)
-      const { data: recentErrors, error: errRecent } = await supabase
+      let recentErrorsQuery = supabase
         .from('audit_logs')
         .select('service')
-        .eq('source_project', 'confia')
         .in('level', ['error', 'critical'])
         .gte('created_at', past24h);
 
+      if (projectId && projectId !== 'all') {
+        recentErrorsQuery = recentErrorsQuery.eq('project_id', projectId);
+      }
+
+      const { data: recentErrors, error: errRecent } = await recentErrorsQuery;
       if (errRecent) throw errRecent;
 
       const serviceErrorCounts = {};
@@ -139,12 +153,17 @@ export const observabilityService = {
   /**
    * Assina o canal de eventos em tempo real do Supabase
    */
-  subscribeToEvents(callback) {
+  subscribeToEvents(callback, projectId = null) {
+    let filterPattern = undefined;
+    if (projectId && projectId !== 'all') {
+      filterPattern = `project_id=eq.${projectId}`;
+    }
+
     const subscription = supabase
       .channel('observability_events')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'audit_logs', filter: 'source_project=eq.confia' },
+        { event: 'INSERT', schema: 'public', table: 'audit_logs', filter: filterPattern },
         (payload) => {
           callback(payload.new);
         }

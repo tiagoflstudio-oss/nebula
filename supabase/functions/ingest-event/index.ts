@@ -20,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Validar Token de Autenticação Ingest
+    // 1. Validar Presença do Token de Autenticação Ingest
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
@@ -30,18 +30,86 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace(/^Bearer\s+/, '')
-    const ingestSecret = Deno.env.get('INGEST_SECRET')
+    const globalIngestSecret = Deno.env.get('INGEST_SECRET')
 
-    if (!ingestSecret || token !== ingestSecret) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+    // 2. Inicializar Supabase Client com Service Role (para ignorar RLS nas validações e insert)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    let projectId = null
+    let projectUserId = null
+    let sourceProject = 'geral'
+
+    // 3. Autenticação do Projeto e Identificação de Tenant
+    if (globalIngestSecret && token === globalIngestSecret) {
+      // Fallback para Ingestão Legada da Fase 1 (Usa o projeto padrão 'confia')
+      sourceProject = 'confia'
+      
+      // Busca o projeto padrão 'confia'
+      let { data: defaultProject } = await supabase
+        .from('projects')
+        .select('id, user_id')
+        .eq('slug', 'confia')
+        .maybeSingle()
+
+      // Se não existir o projeto 'confia', cria-o de forma automática
+      if (!defaultProject) {
+        // Encontra um usuário administrador/vip na tabela profiles para associar o projeto
+        const { data: adminUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'admin')
+          .limit(1)
+          .maybeSingle()
+
+        const defaultUserId = adminUser?.id || null
+
+        const { data: newProject, error: createError } = await supabase
+          .from('projects')
+          .insert([{
+            name: 'Confia',
+            slug: 'confia',
+            ingest_secret: globalIngestSecret,
+            user_id: defaultUserId
+          }])
+          .select('id, user_id')
+          .single()
+
+        if (createError) {
+          console.error('Failed to auto-create default Confia project:', createError)
+        } else {
+          defaultProject = newProject
+        }
+      }
+
+      if (defaultProject) {
+        projectId = defaultProject.id
+        projectUserId = defaultProject.user_id
+      }
+    } else {
+      // Busca o projeto associado a este token exclusivo
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .select('id, user_id, name, slug')
+        .eq('ingest_secret', token)
+        .maybeSingle()
+
+      if (projectError || !project) {
+        return new Response(JSON.stringify({ error: 'Unauthorized or invalid ingest token' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      projectId = project.id
+      projectUserId = project.user_id
+      sourceProject = project.slug
     }
 
-    // 2. Parsear e Validar Payload
+    // 4. Parsear e Validar Payload
     const body = await req.json()
-    const { source_project, service, level, message, metadata, trace_id, tenant_id, tenant_name } = body
+    const { service, level, message, metadata, trace_id, tenant_id, tenant_name } = body
 
     if (!service || !level || !message) {
       return new Response(JSON.stringify({ error: 'Missing required fields: service, level, message' }), {
@@ -58,16 +126,13 @@ serve(async (req) => {
       })
     }
 
-    // 3. Inicializar Supabase Client com Service Role para ignorar RLS
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-    // 4. Inserir Evento
-    const { data, error } = await supabase
+    // 5. Inserir Evento Vinculado ao Projeto e ao Usuário Proprietário
+    const { data: logData, error: logError } = await supabase
       .from('audit_logs')
       .insert([{
-        source_project: source_project || 'confia',
+        project_id: projectId,
+        user_id: projectUserId, // Propaga o user_id do projeto no log para a RLS de leitura funcionar
+        source_project: sourceProject,
         service,
         level,
         message,
@@ -75,20 +140,20 @@ serve(async (req) => {
         trace_id: trace_id || null,
         tenant_id: tenant_id || null,
         tenant_name: tenant_name || null,
-        action_type: `observability:${service}:${level}` // mantendo compatibilidade com action_type obrigatório
+        action_type: `observability:${service}:${level}`
       }])
       .select('id')
       .single()
 
-    if (error) {
-      console.error('Database insert error:', error)
-      return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
+    if (logError) {
+      console.error('Database insert error:', logError)
+      return new Response(JSON.stringify({ error: 'Internal Server Error', details: logError.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    return new Response(JSON.stringify({ success: true, id: data.id }), {
+    return new Response(JSON.stringify({ success: true, id: logData.id }), {
       status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

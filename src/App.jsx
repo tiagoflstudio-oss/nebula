@@ -361,17 +361,7 @@ function App() {
       );
     }
     if (selectedPage === 'projects-list') {
-      return (
-        <ProjectsListPage
-          projects={projects}
-          onCreateProject={handleCreateProject}
-          onDeleteProject={handleDeleteProject}
-          onSelectProject={(id) => {
-            setSelectedProjectId(id);
-            setSelectedPage('home');
-          }}
-        />
-      );
+      return <ProjectsListPage />;
     }
 
     if (selectedProjectId && !selectedChatId) {

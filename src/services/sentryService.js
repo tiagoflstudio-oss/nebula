@@ -10,13 +10,16 @@ export const sentryService = {
    * Se a chave VITE_SENTRY_AUTH_TOKEN não estiver configurada no .env,
    * gera um mock inteligente correlacionado com os logs de erro do banco.
    */
-  async getRecentSentryIssues() {
+  async getRecentSentryIssues(projectConfig = {}) {
+    const org = projectConfig.sentry_org || SENTRY_ORG;
+    const project = projectConfig.sentry_project || SENTRY_PROJECT;
+
     // 1. Caso haja credenciais configuradas, busca na API oficial do Sentry
     if (SENTRY_AUTH_TOKEN) {
       try {
-        console.log(`🌐 Sentry: Buscando erros reais via API para ${SENTRY_ORG}/${SENTRY_PROJECT}`);
+        console.log(`🌐 Sentry: Buscando erros reais via API para ${org}/${project}`);
         const response = await fetch(
-          `https://sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/events/`,
+          `https://sentry.io/api/0/projects/${org}/${project}/events/`,
           {
             headers: {
               'Authorization': `Bearer ${SENTRY_AUTH_TOKEN}`,
@@ -39,7 +42,7 @@ export const sentryService = {
               created_at: evt.dateCreated || evt.timestamp,
               metadata: {
                 culprit: evt.culprit,
-                sentry_url: `https://sentry.io/organizations/${SENTRY_ORG}/issues/?query=${evt.id}`,
+                sentry_url: `https://sentry.io/organizations/${org}/issues/?query=${evt.id}`,
                 sdk: evt.sdk,
                 user: evt.user,
                 release: evt.release
@@ -107,7 +110,7 @@ export const sentryService = {
             created_at: new Date(new Date(log.created_at).getTime() + 1200).toISOString(), // Ocorre 1.2 segundos após o log de negócio
             metadata: {
               culprit: errorTemplate.culprit,
-              sentry_url: `https://sentry.io/organizations/confia-saas/issues/mock-issue-${index}/`,
+              sentry_url: `https://sentry.io/organizations/${org}/issues/mock-issue-${index}/`,
               sdk: { name: "sentry.javascript.nextjs", version: "8.12.0" },
               environment: "development",
               browser: "Chrome 125.0.0",
@@ -128,7 +131,7 @@ export const sentryService = {
         created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 min atrás
         metadata: {
           culprit: "components/dashboard.tsx:254",
-          sentry_url: "https://sentry.io/organizations/confia-saas/issues/orphan-1/",
+          sentry_url: `https://sentry.io/organizations/${org}/issues/orphan-1/`,
           sdk: { name: "sentry.javascript.nextjs", version: "8.12.0" },
           environment: "production",
           mocked: true

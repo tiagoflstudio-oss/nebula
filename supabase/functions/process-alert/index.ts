@@ -6,6 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface AlertRule {
+  id: string
+  project_id: string
+  user_id: string
+  name: string
+  filter_service: string | null
+  filter_level: string | null
+  trigger_type: 'immediate' | 'threshold'
+  threshold_limit: number | null
+  threshold_window_minutes: number | null
+  channel: 'whatsapp' | 'email' | 'slack' | 'webhook'
+  recipient: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+interface AuditLog {
+  id: string
+  project_id: string
+  user_id: string | null
+  source_project: string | null
+  service: string
+  level: string
+  message: string
+  metadata?: Record<string, unknown>
+  trace_id?: string | null
+  tenant_id?: string | null
+  tenant_name?: string | null
+  action_type?: string
+  created_at: string
+}
+
 // ─────────────────────────────────────────────────────────────
 // Funções de Envio de Notificação por Canal
 // ─────────────────────────────────────────────────────────────
@@ -13,17 +46,13 @@ const corsHeaders = {
 /** Envia alerta via WhatsApp (simulado com log detalhado) */
 async function sendWhatsApp(recipient: string, message: string): Promise<void> {
   console.log(`📱 [WhatsApp Mock] → ${recipient}: ${message}`)
-  // TODO: Integrar Evolution API / Twilio quando em produção real
-  // const res = await fetch(Deno.env.get('EVOLUTION_API_URL') + '/message/text', {
-  //   method: 'POST', headers: { 'apikey': Deno.env.get('EVOLUTION_API_KEY') },
-  //   body: JSON.stringify({ number: recipient, text: message })
-  // })
+  await Promise.resolve()
 }
 
 /** Envia alerta via E-mail (simulado com log detalhado) */
 async function sendEmail(recipient: string, subject: string, body: string): Promise<void> {
   console.log(`📧 [Email Mock] → ${recipient} | Assunto: ${subject}\n${body}`)
-  // TODO: Integrar Brevo / Resend quando em produção real
+  await Promise.resolve()
 }
 
 /** Envia alerta via Slack Webhook real (se webhook URL configurada) */
@@ -38,7 +67,7 @@ async function sendSlack(webhookUrl: string, message: string): Promise<void> {
 }
 
 /** Envia via Webhook genérico HTTP POST */
-async function sendWebhook(url: string, payload: object): Promise<void> {
+async function sendWebhook(url: string, payload: { alert: string; log: AuditLog; message: string }): Promise<void> {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -51,13 +80,13 @@ async function sendWebhook(url: string, payload: object): Promise<void> {
 // ─────────────────────────────────────────────────────────────
 // Monta a mensagem de alerta formatada
 // ─────────────────────────────────────────────────────────────
-function buildAlertMessage(rule: Record<string, unknown>, log: Record<string, unknown>): string {
+function buildAlertMessage(rule: AlertRule, log: AuditLog): string {
   const emoji: Record<string, string> = { critical: '🔴', error: '🟠', warn: '🟡', info: 'ℹ️', debug: '🐛' }
-  const icon = emoji[log.level as string] ?? '⚠️'
+  const icon = emoji[log.level] ?? '⚠️'
   return [
     `${icon} *NEBULA ALERT: ${rule.name}*`,
     `Projeto: ${log.source_project ?? 'N/D'} | Serviço: ${log.service ?? 'N/D'}`,
-    `Nível: ${(log.level as string)?.toUpperCase()} | ${new Date(log.created_at as string).toLocaleString('pt-BR')}`,
+    `Nível: ${log.level.toUpperCase()} | ${new Date(log.created_at).toLocaleString('pt-BR')}`,
     `Mensagem: ${log.message}`,
     log.trace_id ? `Trace ID: ${log.trace_id}` : '',
     log.tenant_name ? `Cliente: ${log.tenant_name}` : '',
@@ -67,7 +96,7 @@ function buildAlertMessage(rule: Record<string, unknown>, log: Record<string, un
 // ─────────────────────────────────────────────────────────────
 // Handler principal da Edge Function
 // ─────────────────────────────────────────────────────────────
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -88,7 +117,7 @@ serve(async (req) => {
     const body = await req.json()
 
     // O Supabase Database Webhook entrega { type, table, schema, record, old_record }
-    const log: Record<string, unknown> = body.record ?? body
+    const log = (body.record ?? body) as AuditLog
 
     if (!log || !log.id) {
       return new Response(JSON.stringify({ error: 'Payload inválido: record ausente' }), {
@@ -100,20 +129,21 @@ serve(async (req) => {
     console.log(`🔔 process-alert: avaliando log ${log.id} | level=${log.level} | service=${log.service} | project_id=${log.project_id}`)
 
     // 1. Buscar regras ativas para o projeto do log
-    const { data: rules, error: rulesErr } = await sb
+    const { data: dbRules, error: rulesErr } = await sb
       .from('alert_rules')
       .select('*')
       .eq('project_id', log.project_id)
       .eq('is_active', true)
 
     if (rulesErr) throw rulesErr
-    if (!rules || rules.length === 0) {
+    if (!dbRules || dbRules.length === 0) {
       console.log('Nenhuma regra ativa para este projeto. Encerrando.')
       return new Response(JSON.stringify({ processed: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
+    const rules = dbRules as AlertRule[]
     const results: Array<{ rule_id: string; status: string; channel: string }> = []
 
     for (const rule of rules) {
@@ -191,7 +221,8 @@ serve(async (req) => {
         console.log(`  ✅ Regra "${rule.name}" → ${rule.channel} → ${rule.recipient}`)
       } catch (dispatchErr) {
         sentStatus = 'failed'
-        errorMsg = (dispatchErr as Error).message
+        const error = dispatchErr as Error
+        errorMsg = error.message
         console.error(`  ❌ Falha ao enviar via ${rule.channel}:`, errorMsg)
       }
 
@@ -213,10 +244,12 @@ serve(async (req) => {
     })
 
   } catch (err) {
-    console.error('❌ process-alert: erro interno:', err)
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
+    const error = err as Error
+    console.error('❌ process-alert: erro interno:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
+

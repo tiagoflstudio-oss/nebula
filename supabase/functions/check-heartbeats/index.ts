@@ -6,7 +6,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+interface LogRecord {
+  id: string
+  project_id: string
+  service: string
+  level: string
+  message: string
+  metadata?: Record<string, unknown>
+  trace_id?: string | null
+  tenant_id?: string | null
+  tenant_name?: string | null
+  source_project?: string | null
+  created_at: string
+}
+
+serve(async (req: Request) => {
   // CORS Preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -27,11 +41,11 @@ serve(async (req) => {
       throw rpcError
     }
 
-    const logsArray = Array.isArray(expiredLogs) ? expiredLogs : []
+    const logsArray = (Array.isArray(expiredLogs) ? expiredLogs : []) as LogRecord[]
     console.log(`⏰ check-heartbeats: Varredura concluída. ${logsArray.length} timeouts detectados.`)
 
     // 2. Para cada log crítico gerado na varredura, disparar a Edge Function process-alert
-    const alertPromises = logsArray.map(async (logRecord) => {
+    const alertPromises = logsArray.map(async (logRecord: LogRecord) => {
       try {
         console.log(`  🔔 check-heartbeats: Disparando alerta para log de inatividade ${logRecord.id}`)
         
@@ -52,7 +66,8 @@ serve(async (req) => {
           console.log(`  ✅ check-heartbeats: Alerta processado com sucesso para o log ${logRecord.id}`)
         }
       } catch (err) {
-        console.error(`  ❌ check-heartbeats: Falha ao disparar process-alert para o log ${logRecord.id}:`, err.message)
+        const error = err as Error
+        console.error(`  ❌ check-heartbeats: Falha ao disparar process-alert para o log ${logRecord.id}:`, error.message)
       }
     })
 
@@ -70,10 +85,12 @@ serve(async (req) => {
     })
 
   } catch (err) {
-    console.error('❌ check-heartbeats: Erro interno no servidor:', err)
-    return new Response(JSON.stringify({ error: 'Internal Server Error', details: err.message }), {
+    const error = err as Error
+    console.error('❌ check-heartbeats: Erro interno no servidor:', error)
+    return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
+

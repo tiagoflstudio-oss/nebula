@@ -6,7 +6,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+interface IngestPayload {
+  service: string
+  level: string
+  message: string
+  metadata?: Record<string, unknown>
+  trace_id?: string | null
+  tenant_id?: string | null
+  tenant_name?: string | null
+}
+
+interface ProjectRecord {
+  id: string
+  user_id: string | null
+  name: string
+  slug: string
+  ingest_secret: string
+}
+
+serve(async (req: Request) => {
   // CORS Preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -37,8 +55,8 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    let projectId = null
-    let projectUserId = null
+    let projectId: string | null = null
+    let projectUserId: string | null = null
     let sourceProject = 'geral'
 
     // 3. Autenticação do Projeto e Identificação de Tenant
@@ -47,14 +65,16 @@ serve(async (req) => {
       sourceProject = 'confia'
       
       // Busca o projeto padrão 'confia'
-      let { data: defaultProject } = await supabase
+      const { data: defaultProject } = await supabase
         .from('projects')
         .select('id, user_id')
         .eq('slug', 'confia')
         .maybeSingle()
 
+      let resolvedProject = defaultProject
+
       // Se não existir o projeto 'confia', cria-o de forma automática
-      if (!defaultProject) {
+      if (!resolvedProject) {
         // Encontra um usuário administrador/vip na tabela profiles para associar o projeto
         const { data: adminUser } = await supabase
           .from('profiles')
@@ -79,13 +99,13 @@ serve(async (req) => {
         if (createError) {
           console.error('Failed to auto-create default Confia project:', createError)
         } else {
-          defaultProject = newProject
+          resolvedProject = newProject
         }
       }
 
-      if (defaultProject) {
-        projectId = defaultProject.id
-        projectUserId = defaultProject.user_id
+      if (resolvedProject) {
+        projectId = resolvedProject.id
+        projectUserId = resolvedProject.user_id
       }
     } else {
       // Busca o projeto associado a este token exclusivo
@@ -102,13 +122,14 @@ serve(async (req) => {
         })
       }
 
-      projectId = project.id
-      projectUserId = project.user_id
-      sourceProject = project.slug
+      const typedProject = project as unknown as ProjectRecord
+      projectId = typedProject.id
+      projectUserId = typedProject.user_id
+      sourceProject = typedProject.slug
     }
 
     // 4. Parsear e Validar Payload
-    const body = await req.json()
+    const body = await req.json() as IngestPayload
     const { service, level, message, metadata, trace_id, tenant_id, tenant_name } = body
 
     if (!service || !level || !message) {
@@ -155,8 +176,6 @@ serve(async (req) => {
 
     // 6. Disparar process-alert de forma assíncrona (fire-and-forget)
     // Evita bloquear a resposta ao cliente — falhas no alerta não afetam a ingestão do log
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const alertPayload = {
       record: {
         id:             logData.id,
@@ -178,10 +197,10 @@ serve(async (req) => {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
-        'Authorization': `Bearer ${serviceKey}`
+        'Authorization': `Bearer ${supabaseServiceKey}`
       },
       body: JSON.stringify(alertPayload)
-    }).catch(err => console.warn('⚠️ process-alert: falha no disparo assíncrono:', err.message))
+    }).catch((err: Error) => console.warn('⚠️ process-alert: falha no disparo assíncrono:', err.message))
 
     return new Response(JSON.stringify({ success: true, id: logData.id }), {
       status: 201,
@@ -189,10 +208,12 @@ serve(async (req) => {
     })
 
   } catch (err) {
-    console.error('Server error:', err)
-    return new Response(JSON.stringify({ error: 'Internal Server Error', details: err.message }), {
+    const error = err as Error
+    console.error('Server error:', error)
+    return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
+

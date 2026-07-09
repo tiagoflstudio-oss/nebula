@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { alertService } from '../services/alertService';
 import { projectService } from '../services/projectService';
 import './AlertsPage.css';
@@ -103,7 +104,12 @@ const AlertsPage = () => {
     }
     setSubmitting(true);
     try {
-      const newRule = await alertService.createAlertRule(form);
+      const cleanedForm = {
+        ...form,
+        filter_level: form.filter_level || null,
+        filter_service: form.filter_service || null,
+      };
+      const newRule = await alertService.createAlertRule(cleanedForm);
       setRules(prev => [newRule, ...prev]);
       setShowModal(false);
       setForm(f => ({ ...f, name: '', recipient: '' }));
@@ -310,7 +316,7 @@ const AlertsPage = () => {
       )}
 
       {/* ── Modal de Nova Regra ───────────────────────────────── */}
-      {showModal && (
+      {showModal && createPortal(
         <div className="obs-modal-backdrop">
           <div className="obs-modal-content glass large fade-in">
             <div className="obs-modal-header">
@@ -461,7 +467,8 @@ const AlertsPage = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { projectService } from '../services/projectService';
 import './ProjectsListPage.css';
 
@@ -274,7 +275,7 @@ const ProjectsListPage = () => {
       )}
 
       {/* MODAL 1: Cadastro de Projeto */}
-      {showCreateModal && (
+      {showCreateModal && createPortal(
         <div className="obs-modal-backdrop">
           <div className="obs-modal-content glass fade-in">
             <div className="obs-modal-header">
@@ -342,11 +343,12 @@ const ProjectsListPage = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 2: Configurações e Integrações */}
-      {showSettingsModal && selectedProject && (
+      {showSettingsModal && selectedProject && createPortal(
         <div className="obs-modal-backdrop">
           <div className="obs-modal-content glass fade-in">
             <div className="obs-modal-header">
@@ -430,11 +432,12 @@ const ProjectsListPage = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 3: Token e Instruções de Integração */}
-      {showTokenModal && selectedProject && (
+      {showTokenModal && selectedProject && createPortal(
         <div className="obs-modal-backdrop">
           <div className="obs-modal-content glass large fade-in">
             <div className="obs-modal-header">
@@ -487,7 +490,8 @@ const ProjectsListPage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

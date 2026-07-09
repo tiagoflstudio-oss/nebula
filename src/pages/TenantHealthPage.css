@@ -1,0 +1,511 @@
+/* ─────────────────────────────────────────────────────────────
+   ESTILOS PREMIUM: MONITOR DE SAÚDE DO CLIENTE (TENANT HEALTH)
+   Identidade: Glassmorphism, Neon Glow e UI Fluida
+   ───────────────────────────────────────────────────────────── */
+
+.tenant-health-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 1. Grade de Estatísticas do Topo */
+.health-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.health-stats-grid .stat-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.health-stats-grid .stat-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
+}
+
+.health-stats-grid .stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.health-stats-grid .stat-icon span {
+  font-size: 28px;
+}
+
+/* Ícones customizados com brilho */
+.health-stats-grid .stat-icon.tenants-count span {
+  color: #3b82f6;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+.health-stats-grid .stat-icon.health-average span {
+  color: #10b981;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+.health-stats-grid .stat-icon.tenants-critical span {
+  color: #ef4444;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.health-stats-grid .stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.health-stats-grid .stat-info h3 {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.health-stats-grid .stat-info .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 2px;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.health-stats-grid .stat-info .stat-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Cores de status de valor */
+.text-red {
+  color: #f87171 !important;
+  text-shadow: 0 0 12px rgba(248, 113, 113, 0.3);
+}
+.text-yellow {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+}
+.text-green {
+  color: #34d399 !important;
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+}
+
+/* 2. Alerta de execução de varredura */
+.check-result-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1);
+}
+
+.check-result-alert .success-icon {
+  color: #34d399;
+  font-size: 24px;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+}
+
+.check-result-alert p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+/* Botão especial de varredura */
+.scan-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4) !important;
+  transition: all 0.3s ease;
+}
+
+.scan-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.6) !important;
+}
+
+.scan-btn.loading .spin-icon {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 3. Abas Inlines */
+.inline-tabs {
+  margin-left: auto;
+}
+
+/* 4. Grade de Clientes (Tenants) */
+.tenants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.tenant-card {
+  padding: 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.tenant-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Variações de bordas neon conforme saúde */
+.tenant-card.health-excellent {
+  border-color: rgba(52, 211, 153, 0.15);
+}
+.tenant-card.health-excellent:hover {
+  border-color: rgba(52, 211, 153, 0.4);
+  box-shadow: 0 8px 30px rgba(52, 211, 153, 0.08);
+}
+
+.tenant-card.health-good {
+  border-color: rgba(59, 130, 246, 0.15);
+}
+.tenant-card.health-good:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.08);
+}
+
+.tenant-card.health-warning {
+  border-color: rgba(251, 191, 36, 0.15);
+}
+.tenant-card.health-warning:hover {
+  border-color: rgba(251, 191, 36, 0.4);
+  box-shadow: 0 8px 30px rgba(251, 191, 36, 0.08);
+}
+
+.tenant-card.health-critical {
+  border-color: rgba(248, 113, 113, 0.15);
+}
+.tenant-card.health-critical:hover {
+  border-color: rgba(248, 113, 113, 0.4);
+  box-shadow: 0 8px 30px rgba(248, 113, 113, 0.08);
+}
+
+/* Detalhes do Card */
+.tenant-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.tenant-card-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.tenant-card-header .tenant-id {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.tenant-card-header .tenant-id code {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* Badge do score de saúde do cliente */
+.tenant-score-badge {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.tenant-score-badge.health-excellent {
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+.tenant-score-badge.health-good {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.tenant-score-badge.health-warning {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+.tenant-score-badge.health-critical {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+/* Barra de progresso de integridade */
+.health-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.health-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.1, 0.8, 0.25, 1);
+}
+
+.health-bar-fill.health-excellent {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+}
+.health-bar-fill.health-good {
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.5);
+}
+.health-bar-fill.health-warning {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+}
+.health-bar-fill.health-critical {
+  background: linear-gradient(90deg, #dc2626, #f87171);
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
+}
+
+/* Informações de volumes do cliente */
+.tenant-events-info {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding-bottom: 12px;
+}
+
+.tenant-events-info .event-item {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.tenant-events-info .event-item strong {
+  color: #ffffff;
+}
+
+/* Lista de Integradores do cliente */
+.tenant-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tenant-services-list .services-title {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+.tenant-services-list .no-services-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  font-style: italic;
+}
+
+.services-badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Tags de sinal vital por serviço */
+.service-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.service-status-tag .status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.service-status-tag.online {
+  background: rgba(52, 211, 153, 0.05);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+.service-status-tag.online .status-dot {
+  background: #34d399;
+  box-shadow: 0 0 6px #34d399;
+}
+
+.service-status-tag.offline {
+  background: rgba(248, 113, 113, 0.05);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+.service-status-tag.offline .status-dot {
+  background: #f87171;
+  box-shadow: 0 0 6px #f87171;
+}
+
+/* 5. Tabela de Sinais Vitais (Heartbeats) */
+.heartbeats-table-wrapper {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+}
+
+.heartbeats-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.heartbeats-table th {
+  padding: 18px 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.heartbeats-table td {
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+
+.heartbeat-row {
+  transition: background-color 0.2s ease;
+}
+
+.heartbeat-row:hover {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+/* Efeito de inatividade visual na linha offline */
+.heartbeat-row.offline {
+  background-color: rgba(248, 113, 113, 0.01);
+}
+
+.heartbeats-table .status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.heartbeats-table .status-pill .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.heartbeats-table .status-pill.online {
+  background: rgba(52, 211, 153, 0.08);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+.heartbeats-table .status-pill.online .status-dot {
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+}
+
+.heartbeats-table .status-pill.offline {
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+.heartbeats-table .status-pill.offline .status-dot {
+  background: #f87171;
+  box-shadow: 0 0 8px #f87171;
+}
+
+/* Identificadores */
+.heartbeats-table .tenant-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heartbeats-table .tenant-cell strong {
+  color: #ffffff;
+}
+
+.heartbeats-table .tenant-id-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: monospace;
+}
+
+.heartbeats-table .time-cell {
+  font-weight: 500;
+}
+
+.heartbeats-table .time-sub {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 2px;
+}
+
+.heartbeats-table .timeout-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.heartbeats-table .timeout-cell .mini-icon {
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+.heartbeats-table .updated-cell {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}

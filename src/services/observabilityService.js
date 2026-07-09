@@ -173,5 +173,84 @@ export const observabilityService = {
     return () => {
       supabase.removeChannel(subscription);
     };
+  },
+
+  /**
+   * Calcula o score de integridade (0-100%) por tenant nas últimas 24h
+   */
+  async getTenantHealthScores(projectId = null) {
+    try {
+      const past24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      let query = supabase
+        .from('audit_logs')
+        .select('tenant_id, tenant_name, level')
+        .gte('created_at', past24h)
+        .not('tenant_id', 'is', null);
+
+      if (projectId && projectId !== 'all') {
+        query = query.eq('project_id', projectId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const tenantsMap = {};
+      data.forEach(log => {
+        const id = log.tenant_id;
+        const name = log.tenant_name || id;
+        const isError = ['error', 'critical'].includes(log.level);
+
+        if (!tenantsMap[id]) {
+          tenantsMap[id] = { id, name, total: 0, errors: 0 };
+        }
+        if (log.tenant_name && log.tenant_name !== id) {
+          tenantsMap[id].name = log.tenant_name;
+        }
+
+        tenantsMap[id].total += 1;
+        if (isError) {
+          tenantsMap[id].errors += 1;
+        }
+      });
+
+      return Object.values(tenantsMap).map(t => {
+        const successCount = t.total - t.errors;
+        const score = t.total > 0 ? Math.round((successCount / t.total) * 100) : 100;
+        return {
+          tenant_id: t.id,
+          tenant_name: t.name,
+          total_events: t.total,
+          error_events: t.errors,
+          health_score: score
+        };
+      }).sort((a, b) => a.health_score - b.health_score);
+    } catch (err) {
+      console.error('Erro ao buscar score de saúde dos tenants:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Obtém o status dos heartbeats de serviços dos tenants
+   */
+  async getServiceHeartbeats(projectId = null) {
+    try {
+      let query = supabase
+        .from('service_heartbeats')
+        .select('*');
+
+      if (projectId && projectId !== 'all') {
+        query = query.eq('project_id', projectId);
+      }
+
+      const { data, error } = await query.order('last_seen', { ascending: false });
+      if (error) throw error;
+
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar heartbeats de serviços:', err);
+      throw err;
+    }
   }
 };
+
